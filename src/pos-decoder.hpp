@@ -69,8 +69,6 @@ class POSDecoder {
 
     opendlv::device::gps::pos::TimeDistance getTimeDistance(std::stringstream &buffer);
     opendlv::device::gps::pos::Grp1Data getGRP1(std::stringstream &buffer);
-
-/*
     opendlv::device::gps::pos::Grp2Data getGRP2(std::stringstream &buffer);
     opendlv::device::gps::pos::Grp3Data getGRP3(std::stringstream &buffer);
     opendlv::device::gps::pos::GNSSReceiverChannelStatus getGNSSReceiverChannelStatus(std::stringstream &buffer);
@@ -79,7 +77,6 @@ class POSDecoder {
     opendlv::device::gps::pos::Grp10002Data getGRP10002(std::stringstream &buffer);
     opendlv::device::gps::pos::Grp10003Data getGRP10003(std::stringstream &buffer);
     opendlv::device::gps::pos::Grp10009Data getGRP10009(std::stringstream &buffer);
-*/
 
    private:
     std::stringstream m_buffer{};
