@@ -22,9 +22,29 @@
 
 #include <chrono>
 #include <functional>
+#include <sstream>
 #include <string>
 
 class POSDecoder {
+   private:
+        enum GRP_SIZES {
+            GRP_HEADER_SIZE             = 8,
+            GRP_FOOTER_SIZE             = 4,
+            TIME_DISTANCE_FIELD_SIZE    = 26,
+        };
+
+        enum POSMessages {
+            UNKNOWN                     = 0,
+            GRP1                        = 1,
+            GRP2                        = 2,
+            GRP3                        = 3,
+            GRP4                        = 4,
+            GRP10001                    = 10001,
+            GRP10002                    = 10002,
+            GRP10003                    = 10003,
+            GRP10009                    = 10009,
+        };
+
    private:
     POSDecoder(const POSDecoder &) = delete;
     POSDecoder(POSDecoder &&)      = delete;
@@ -42,8 +62,30 @@ class POSDecoder {
    private:
     std::function<void(const double &latitude, const double &longitude, const std::chrono::system_clock::time_point &tp)> m_delegateLatitudeLongitude{};
     std::function<void(const float &heading, const std::chrono::system_clock::time_point &tp)> m_delegateHeading{};
-};
 
+   private:
+    void prepareReadingBuffer(std::stringstream &buffer);
+/*
+    opendlv::core::sensors::applanix::TimeDistance getTimeDistance(std::stringstream &buffer);
+    opendlv::core::sensors::applanix::Grp1Data getGRP1(std::stringstream &buffer);
+    opendlv::core::sensors::applanix::Grp2Data getGRP2(std::stringstream &buffer);
+    opendlv::core::sensors::applanix::Grp3Data getGRP3(std::stringstream &buffer);
+    opendlv::core::sensors::applanix::GNSSReceiverChannelStatus getGNSSReceiverChannelStatus(std::stringstream &buffer);
+    opendlv::core::sensors::applanix::Grp4Data getGRP4(std::stringstream &buffer);
+    opendlv::core::sensors::applanix::Grp10001Data getGRP10001(std::stringstream &buffer);
+    opendlv::core::sensors::applanix::Grp10002Data getGRP10002(std::stringstream &buffer);
+    opendlv::core::sensors::applanix::Grp10003Data getGRP10003(std::stringstream &buffer);
+    opendlv::core::sensors::applanix::Grp10009Data getGRP10009(std::stringstream &buffer);
+*/
+
+   private:
+    std::stringstream m_buffer{};
+    bool m_foundHeader{false};
+    bool m_buffering{false};
+    uint32_t m_payloadSize{0};
+    uint32_t m_toRemove{0};
+    POSMessages m_nextPOSMessage{POSDecoder::UNKNOWN};
+};
 
 #endif
 
