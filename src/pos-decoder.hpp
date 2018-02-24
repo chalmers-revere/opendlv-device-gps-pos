@@ -19,6 +19,7 @@
 #define POS_DECODER
 
 #include "opendlv-standard-message-set.hpp"
+#include "pos-message-set.hpp"
 
 #include <chrono>
 #include <functional>
@@ -65,17 +66,19 @@ class POSDecoder {
 
    private:
     void prepareReadingBuffer(std::stringstream &buffer);
+
+    opendlv::device::gps::pos::TimeDistance getTimeDistance(std::stringstream &buffer);
+    opendlv::device::gps::pos::Grp1Data getGRP1(std::stringstream &buffer);
+
 /*
-    opendlv::core::sensors::applanix::TimeDistance getTimeDistance(std::stringstream &buffer);
-    opendlv::core::sensors::applanix::Grp1Data getGRP1(std::stringstream &buffer);
-    opendlv::core::sensors::applanix::Grp2Data getGRP2(std::stringstream &buffer);
-    opendlv::core::sensors::applanix::Grp3Data getGRP3(std::stringstream &buffer);
-    opendlv::core::sensors::applanix::GNSSReceiverChannelStatus getGNSSReceiverChannelStatus(std::stringstream &buffer);
-    opendlv::core::sensors::applanix::Grp4Data getGRP4(std::stringstream &buffer);
-    opendlv::core::sensors::applanix::Grp10001Data getGRP10001(std::stringstream &buffer);
-    opendlv::core::sensors::applanix::Grp10002Data getGRP10002(std::stringstream &buffer);
-    opendlv::core::sensors::applanix::Grp10003Data getGRP10003(std::stringstream &buffer);
-    opendlv::core::sensors::applanix::Grp10009Data getGRP10009(std::stringstream &buffer);
+    opendlv::device::gps::pos::Grp2Data getGRP2(std::stringstream &buffer);
+    opendlv::device::gps::pos::Grp3Data getGRP3(std::stringstream &buffer);
+    opendlv::device::gps::pos::GNSSReceiverChannelStatus getGNSSReceiverChannelStatus(std::stringstream &buffer);
+    opendlv::device::gps::pos::Grp4Data getGRP4(std::stringstream &buffer);
+    opendlv::device::gps::pos::Grp10001Data getGRP10001(std::stringstream &buffer);
+    opendlv::device::gps::pos::Grp10002Data getGRP10002(std::stringstream &buffer);
+    opendlv::device::gps::pos::Grp10003Data getGRP10003(std::stringstream &buffer);
+    opendlv::device::gps::pos::Grp10009Data getGRP10009(std::stringstream &buffer);
 */
 
    private:

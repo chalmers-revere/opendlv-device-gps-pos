@@ -77,61 +77,61 @@ void POSDecoder::decode(const std::string &data, std::chrono::system_clock::time
             m_buffer.seekg(m_toRemove, std::ios_base::beg);
 
             if (POSDecoder::GRP1 == m_nextPOSMessage) {
-//                // Decode Applanix GRP1.
-//                opendlv::core::sensors::applanix::Grp1Data g1Data = getGRP1(m_buffer);
-//                Container c(g1Data);
-//                m_conference.send(c);
+                // Decode Applanix GRP1.
+                opendlv::device::gps::pos::Grp1Data g1Data{getGRP1(m_buffer)};
 
-//                // Create generic message.
-//                opendlv::data::environment::WGS84Coordinate wgs84(g1Data.getLat(), g1Data.getLon());
-//                Container c2(wgs84);
-//                m_conference.send(c2);
+                if (nullptr != m_delegateLatitudeLongitude) {
+                    m_delegateLatitudeLongitude(g1Data.lat(), g1Data.lon(), timestamp);
+                }
+                if (nullptr != m_delegateHeading) {
+                    m_delegateHeading(static_cast<float>(g1Data.heading()), timestamp);
+                }
             }
             else if (POSDecoder::GRP2 == m_nextPOSMessage) {
 //                // Decode Applanix GRP2.
-//                opendlv::core::sensors::applanix::Grp2Data g2Data = getGRP2(m_buffer);
+//                opendlv::device::gps::pos::Grp2Data g2Data = getGRP2(m_buffer);
 
 //                Container c(g2Data);
 //                m_conference.send(c);
             }
             else if (POSDecoder::GRP3 == m_nextPOSMessage) {
 //                // Decode Applanix GRP3.
-//                opendlv::core::sensors::applanix::Grp3Data g3Data = getGRP3(m_buffer);
+//                opendlv::device::gps::pos::Grp3Data g3Data = getGRP3(m_buffer);
 
 //                Container c(g3Data);
 //                m_conference.send(c);
             }
             else if (POSDecoder::GRP4 == m_nextPOSMessage) {
 //                // Decode Applanix GRP4.
-//                opendlv::core::sensors::applanix::Grp4Data g4Data = getGRP4(m_buffer);
+//                opendlv::device::gps::pos::Grp4Data g4Data = getGRP4(m_buffer);
 
 //                Container c(g4Data);
 //                m_conference.send(c);
             }
             else if (POSDecoder::GRP10001 == m_nextPOSMessage) {
 //                // Decode Applanix GRP10001.
-//                opendlv::core::sensors::applanix::Grp10001Data g10001Data = getGRP10001(m_buffer);
+//                opendlv::device::gps::pos::Grp10001Data g10001Data = getGRP10001(m_buffer);
 
 //                Container c(g10001Data);
 //                m_conference.send(c);
             }
             else if (POSDecoder::GRP10002 == m_nextPOSMessage) {
 //                // Decode Applanix GRP10002.
-//                opendlv::core::sensors::applanix::Grp10002Data g10002Data = getGRP10002(m_buffer);
+//                opendlv::device::gps::pos::Grp10002Data g10002Data = getGRP10002(m_buffer);
 
 //                Container c(g10002Data);
 //                m_conference.send(c);
             }
             else if (POSDecoder::GRP10003 == m_nextPOSMessage) {
 //                // Decode Applanix GRP10003.
-//                opendlv::core::sensors::applanix::Grp10003Data g10003Data = getGRP10003(m_buffer);
+//                opendlv::device::gps::pos::Grp10003Data g10003Data = getGRP10003(m_buffer);
 
 //                Container c(g10003Data);
 //                m_conference.send(c);
             }
             else if (POSDecoder::GRP10009 == m_nextPOSMessage) {
 //                // Decode Applanix GRP10009.
-//                opendlv::core::sensors::applanix::Grp10009Data g10009Data = getGRP10009(m_buffer);
+//                opendlv::device::gps::pos::Grp10009Data g10009Data = getGRP10009(m_buffer);
 
 //                Container c(g10009Data);
 //                m_conference.send(c);
@@ -240,9 +240,8 @@ void POSDecoder::decode(const std::string &data, std::chrono::system_clock::time
     }
 }
 
-#if 0
-opendlv::core::sensors::applanix::TimeDistance POSDecoder::getTimeDistance(std::stringstream &buffer) {
-    opendlv::core::sensors::applanix::TimeDistance timedist;
+opendlv::device::gps::pos::TimeDistance POSDecoder::getTimeDistance(std::stringstream &buffer) {
+    opendlv::device::gps::pos::TimeDistance timedist;
 
     if (buffer.good()) {
         double time1            = 0;
@@ -257,23 +256,21 @@ opendlv::core::sensors::applanix::TimeDistance POSDecoder::getTimeDistance(std::
         buffer.read((char *)(&(timeTypes)), sizeof(timeTypes));
         buffer.read((char *)(&(distanceType)), sizeof(distanceType));
 
-        timedist.setTime1(time1);
-        timedist.setTime2(time2);
-        timedist.setDistanceTag(distanceTag);
-        timedist.setTime1Type(static_cast<opendlv::core::sensors::applanix::TimeDistance::TimeType>(timeTypes & 0x0F));
-        timedist.setTime2Type(static_cast<opendlv::core::sensors::applanix::TimeDistance::TimeType>(timeTypes & 0xF0));
-        timedist.setDistanceType(static_cast<opendlv::core::sensors::applanix::TimeDistance::DistanceType>(distanceType));
+        timedist.time1(time1).time2(time2).distanceTag(distanceTag);
+//        timedist.setTime1Type(static_cast<opendlv::device::gps::pos::TimeDistance::TimeType>(timeTypes & 0x0F));
+//        timedist.setTime2Type(static_cast<opendlv::device::gps::pos::TimeDistance::TimeType>(timeTypes & 0xF0));
+//        timedist.setDistanceType(static_cast<opendlv::device::gps::pos::TimeDistance::DistanceType>(distanceType));
     }
 
     return timedist;
 }
 
-opendlv::core::sensors::applanix::Grp1Data POSDecoder::getGRP1(std::stringstream &buffer) {
-    opendlv::core::sensors::applanix::Grp1Data g1Data;
+opendlv::device::gps::pos::Grp1Data POSDecoder::getGRP1(std::stringstream &buffer) {
+    opendlv::device::gps::pos::Grp1Data g1Data;
 
     if (buffer.good()) {
         // Read timedist field.
-        opendlv::core::sensors::applanix::TimeDistance timedist = getTimeDistance(buffer);
+        opendlv::device::gps::pos::TimeDistance timedist = getTimeDistance(buffer);
 
         double lat          = 0;
         double lon          = 0;
@@ -318,37 +315,38 @@ opendlv::core::sensors::applanix::Grp1Data POSDecoder::getGRP1(std::stringstream
         buffer.read((char *)(&(alignment)), sizeof(alignment));
         buffer.read((char *)(&(pad)), sizeof(pad));
 
-        g1Data.setLat(lat);
-        g1Data.setLon(lon);
-        g1Data.setAlt(alt);
-        g1Data.setVel_north(vel_north);
-        g1Data.setVel_east(vel_east);
-        g1Data.setVel_down(vel_down);
-        g1Data.setRoll(roll);
-        g1Data.setPitch(pitch);
-        g1Data.setHeading(heading);
-        g1Data.setWander(wander);
-        g1Data.setTrack(track);
-        g1Data.setSpeed(speed);
-        g1Data.setArate_lon(arate_lon);
-        g1Data.setArate_trans(arate_trans);
-        g1Data.setArate_down(arate_down);
-        g1Data.setAccel_lon(accel_lon);
-        g1Data.setAccel_trans(accel_trans);
-        g1Data.setAccel_down(accel_down);
-        g1Data.setTimeDistance(timedist);
-        g1Data.setAlignment(alignment);
+        g1Data.lat(lat)
+              .lon(lon)
+              .alt(alt)
+              .vel_north(vel_north)
+              .vel_east(vel_east)
+              .vel_down(vel_down)
+              .roll(roll)
+              .pitch(pitch)
+              .heading(heading)
+              .wander(wander)
+              .track(track)
+              .speed(speed)
+              .arate_lon(arate_lon)
+              .arate_trans(arate_trans)
+              .arate_down(arate_down)
+              .accel_lon(accel_lon)
+              .accel_trans(accel_trans)
+              .accel_down(accel_down)
+              .timeDistance(timedist)
+              .alignment(alignment);
     }
 
     return g1Data;
 }
 
-opendlv::core::sensors::applanix::Grp2Data POSDecoder::getGRP2(std::stringstream &buffer) {
-    opendlv::core::sensors::applanix::Grp2Data g2Data;
+#if 0
+opendlv::device::gps::pos::Grp2Data POSDecoder::getGRP2(std::stringstream &buffer) {
+    opendlv::device::gps::pos::Grp2Data g2Data;
 
     if (buffer.good()) {
         // Read timedist field.
-        opendlv::core::sensors::applanix::TimeDistance timedist = getTimeDistance(buffer);
+        opendlv::device::gps::pos::TimeDistance timedist = getTimeDistance(buffer);
 
         float northposrms           = 0;
         float eastposrms            = 0;
@@ -397,8 +395,8 @@ opendlv::core::sensors::applanix::Grp2Data POSDecoder::getGRP2(std::stringstream
     return g2Data;
 }
 
-opendlv::core::sensors::applanix::GNSSReceiverChannelStatus POSDecoder::getGNSSReceiverChannelStatus(std::stringstream &buffer) {
-    opendlv::core::sensors::applanix::GNSSReceiverChannelStatus gnss;
+opendlv::device::gps::pos::GNSSReceiverChannelStatus POSDecoder::getGNSSReceiverChannelStatus(std::stringstream &buffer) {
+    opendlv::device::gps::pos::GNSSReceiverChannelStatus gnss;
 
     if (buffer.good()) {
         uint16_t SV_PRN                     = 0;
@@ -430,12 +428,12 @@ opendlv::core::sensors::applanix::GNSSReceiverChannelStatus POSDecoder::getGNSSR
     return gnss;
 }
 
-opendlv::core::sensors::applanix::Grp3Data POSDecoder::getGRP3(std::stringstream &buffer) {
-    opendlv::core::sensors::applanix::Grp3Data g3Data;
+opendlv::device::gps::pos::Grp3Data POSDecoder::getGRP3(std::stringstream &buffer) {
+    opendlv::device::gps::pos::Grp3Data g3Data;
 
     if (buffer.good()) {
         // Read timedist field.
-        opendlv::core::sensors::applanix::TimeDistance timedist = getTimeDistance(buffer);
+        opendlv::device::gps::pos::TimeDistance timedist = getTimeDistance(buffer);
 
         int8_t navigationSolutionStatus = 0;
         uint8_t numberSVTracked         = 0;
@@ -459,7 +457,7 @@ opendlv::core::sensors::applanix::Grp3Data POSDecoder::getGRP3(std::stringstream
 
         const uint8_t SIZE_OF_GNSS = 20;
         for (uint8_t i = 0; i < (channelStatusByteCount / SIZE_OF_GNSS); i++) {
-            opendlv::core::sensors::applanix::GNSSReceiverChannelStatus gnss = getGNSSReceiverChannelStatus(buffer);
+            opendlv::device::gps::pos::GNSSReceiverChannelStatus gnss = getGNSSReceiverChannelStatus(buffer);
             g3Data.addTo_ListOfChannel_status(gnss);
         }
 
@@ -502,12 +500,12 @@ opendlv::core::sensors::applanix::Grp3Data POSDecoder::getGRP3(std::stringstream
     return g3Data;
 }
 
-opendlv::core::sensors::applanix::Grp4Data POSDecoder::getGRP4(std::stringstream &buffer) {
-    opendlv::core::sensors::applanix::Grp4Data g4Data;
+opendlv::device::gps::pos::Grp4Data POSDecoder::getGRP4(std::stringstream &buffer) {
+    opendlv::device::gps::pos::Grp4Data g4Data;
 
     if (buffer.good()) {
         // Read timedist field.
-        opendlv::core::sensors::applanix::TimeDistance timedist = getTimeDistance(buffer);
+        opendlv::device::gps::pos::TimeDistance timedist = getTimeDistance(buffer);
 
         const uint16_t LENGTH_IMUDATA = 24;
         char imudata[LENGTH_IMUDATA];
@@ -537,12 +535,12 @@ opendlv::core::sensors::applanix::Grp4Data POSDecoder::getGRP4(std::stringstream
     return g4Data;
 }
 
-opendlv::core::sensors::applanix::Grp10001Data POSDecoder::getGRP10001(std::stringstream &buffer) {
-    opendlv::core::sensors::applanix::Grp10001Data g10001Data;
+opendlv::device::gps::pos::Grp10001Data POSDecoder::getGRP10001(std::stringstream &buffer) {
+    opendlv::device::gps::pos::Grp10001Data g10001Data;
 
     if (buffer.good()) {
         // Read timedist field.
-        opendlv::core::sensors::applanix::TimeDistance timedist = getTimeDistance(buffer);
+        opendlv::device::gps::pos::TimeDistance timedist = getTimeDistance(buffer);
 
         uint16_t GNSS_receiver_type = 0;
         uint32_t reserved           = 0;
@@ -574,12 +572,12 @@ opendlv::core::sensors::applanix::Grp10001Data POSDecoder::getGRP10001(std::stri
     return g10001Data;
 }
 
-opendlv::core::sensors::applanix::Grp10002Data POSDecoder::getGRP10002(std::stringstream &buffer) {
-    opendlv::core::sensors::applanix::Grp10002Data g10002Data;
+opendlv::device::gps::pos::Grp10002Data POSDecoder::getGRP10002(std::stringstream &buffer) {
+    opendlv::device::gps::pos::Grp10002Data g10002Data;
 
     if (buffer.good()) {
         // Read timedist field.
-        opendlv::core::sensors::applanix::TimeDistance timedist = getTimeDistance(buffer);
+        opendlv::device::gps::pos::TimeDistance timedist = getTimeDistance(buffer);
 
         const uint16_t LENGTH_IMUHEADER = 6;
         char imuheader[LENGTH_IMUHEADER];
@@ -614,12 +612,12 @@ opendlv::core::sensors::applanix::Grp10002Data POSDecoder::getGRP10002(std::stri
     return g10002Data;
 }
 
-opendlv::core::sensors::applanix::Grp10003Data POSDecoder::getGRP10003(std::stringstream &buffer) {
-    opendlv::core::sensors::applanix::Grp10003Data g10003Data;
+opendlv::device::gps::pos::Grp10003Data POSDecoder::getGRP10003(std::stringstream &buffer) {
+    opendlv::device::gps::pos::Grp10003Data g10003Data;
 
     if (buffer.good()) {
         // Read timedist field.
-        opendlv::core::sensors::applanix::TimeDistance timedist = getTimeDistance(buffer);
+        opendlv::device::gps::pos::TimeDistance timedist = getTimeDistance(buffer);
 
         uint32_t pps = 0;
         buffer.read((char *)(&(pps)), sizeof(pps));
@@ -636,11 +634,11 @@ opendlv::core::sensors::applanix::Grp10003Data POSDecoder::getGRP10003(std::stri
     return g10003Data;
 }
 
-opendlv::core::sensors::applanix::Grp10009Data POSDecoder::getGRP10009(std::stringstream &buffer) {
+opendlv::device::gps::pos::Grp10009Data POSDecoder::getGRP10009(std::stringstream &buffer) {
     // Grp10009 message is identical to Grp10001. Thus, re-use the decoder and simply copy the data.
-    opendlv::core::sensors::applanix::Grp10001Data g10001Data = getGRP10001(buffer);
+    opendlv::device::gps::pos::Grp10001Data g10001Data = getGRP10001(buffer);
 
-    opendlv::core::sensors::applanix::Grp10009Data g10009Data;
+    opendlv::device::gps::pos::Grp10009Data g10009Data;
     g10009Data.setGNSS_receiver_type(g10001Data.getGNSS_receiver_type());
     g10009Data.setGNSS_receiver_raw_data(g10001Data.getGNSS_receiver_raw_data());
     g10009Data.setTimeDistance(g10001Data.getTimeDistance());
