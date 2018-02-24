@@ -43,38 +43,47 @@ int32_t main(int32_t argc, char **argv) {
             [](auto){}
         };
 
-        // Interface to OxTS unit providing data in POS format.
-        const std::string POS_ADDRESS((commandlineArguments.count("pos_ip") == 0) ? "0.0.0.0" : commandlineArguments["pos_ip"]);
-        const uint32_t POS_PORT(std::stoi(commandlineArguments["pos_port"]));
-        POSDecoder posDecoder;
-        cluon::UDPReceiver fromDevice(POS_ADDRESS, POS_PORT,
-            [&od4Session = od4, &decoder = posDecoder, senderStamp = ID, VERBOSE](std::string &&d, std::string &&/*from*/, std::chrono::system_clock::time_point &&tp) noexcept {
-            auto retVal = decoder.decode(d);
-            if (retVal.first) {
-                cluon::data::TimeStamp sampleTime = cluon::time::convert(tp);
-
-                opendlv::proxy::GeodeticWgs84Reading msg1 = retVal.second.first;
-                od4Session.send(msg1, sampleTime, senderStamp);
-
-                opendlv::proxy::GeodeticHeadingReading msg2 = retVal.second.second;
-                od4Session.send(msg2, sampleTime, senderStamp);
+        POSDecoder posDecoder{
+            [&od4Session = od4, senderStamp = ID, VERBOSE](const double &latitude, const double &longitude, const std::chrono::system_clock::time_point &tp) {
+                opendlv::proxy::GeodeticWgs84Reading m;
+                m.latitude(latitude).longitude(longitude);
+                od4Session.send(m, cluon::time::convert(tp), senderStamp);
 
                 // Print values on console.
                 if (VERBOSE) {
                     std::stringstream buffer;
-                    msg1.accept([](uint32_t, const std::string &, const std::string &) {},
-                               [&buffer](uint32_t, std::string &&, std::string &&n, auto v) { buffer << n << " = " << v << '\n'; },
-                               []() {});
+                    m.accept([](uint32_t, const std::string &, const std::string &) {},
+                             [&buffer](uint32_t, std::string &&, std::string &&n, auto v) { buffer << n << " = " << v << '\n'; },
+                             []() {});
                     std::cout << buffer.str() << std::endl;
+                }
+            },
+            [&od4Session = od4, senderStamp = ID, VERBOSE](const float &heading, const std::chrono::system_clock::time_point &tp) {
+                opendlv::proxy::GeodeticHeadingReading m;
+                m.northHeading(heading);
+                od4Session.send(m, cluon::time::convert(tp), senderStamp);
 
-                    std::stringstream buffer2;
-                    msg2.accept([](uint32_t, const std::string &, const std::string &) {},
-                               [&buffer2](uint32_t, std::string &&, std::string &&n, auto v) { buffer2 << n << " = " << v << '\n'; },
-                               []() {});
-                    std::cout << buffer2.str() << std::endl;
+                // Print values on console.
+                if (VERBOSE) {
+                    std::stringstream buffer;
+                    m.accept([](uint32_t, const std::string &, const std::string &) {},
+                             [&buffer](uint32_t, std::string &&, std::string &&n, auto v) { buffer << n << " = " << v << '\n'; },
+                             []() {});
+                    std::cout << buffer.str() << std::endl;
                 }
             }
-        });
+        };
+
+        // Interface to a Trimble unit providing data in POS format.
+        const std::string POS_ADDRESS(commandlineArguments["pos_ip"]);
+        const uint16_t POS_PORT(std::stoi(commandlineArguments["pos_port"]));
+
+        cluon::TCPConnection fromDevice{POS_ADDRESS, POS_PORT,
+            [&decoder = posDecoder](std::string &&d, std::chrono::system_clock::time_point &&tp) noexcept {
+                decoder.decode(d, std::move(tp));
+            },
+            [&argv](){ std::cerr << "[" << argv[0] << "] Connection lost." << std::endl; exit(1); }
+        };
 
         // Just sleep as this microservice is data driven.
         using namespace std::literals::chrono_literals;

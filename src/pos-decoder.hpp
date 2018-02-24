@@ -20,8 +20,9 @@
 
 #include "opendlv-standard-message-set.hpp"
 
+#include <chrono>
+#include <functional>
 #include <string>
-#include <utility>
 
 class POSDecoder {
    private:
@@ -31,12 +32,18 @@ class POSDecoder {
     POSDecoder &operator=(POSDecoder &&) = delete;
 
    public:
-    POSDecoder() = default;
+    POSDecoder(std::function<void(const double &latitude, const double &longitude, const std::chrono::system_clock::time_point &tp)> delegateLatitudeLongitude,
+                std::function<void(const float &heading, const std::chrono::system_clock::time_point &tp)> delegateHeading) noexcept;
     ~POSDecoder() = default;
 
    public:
-    std::pair<bool, std::pair<opendlv::proxy::GeodeticWgs84Reading, opendlv::proxy::GeodeticHeadingReading> > decode(const std::string &data) noexcept;
+    void decode(const std::string &data, std::chrono::system_clock::time_point &&tp) noexcept;
+
+   private:
+    std::function<void(const double &latitude, const double &longitude, const std::chrono::system_clock::time_point &tp)> m_delegateLatitudeLongitude{};
+    std::function<void(const float &heading, const std::chrono::system_clock::time_point &tp)> m_delegateHeading{};
 };
+
 
 #endif
 

@@ -24,58 +24,14 @@
 #include <sstream>
 #include <string>
 
-std::pair<bool, std::pair<opendlv::proxy::GeodeticWgs84Reading, opendlv::proxy::GeodeticHeadingReading> > POSDecoder::decode(const std::string &data) noexcept {
-    bool retVal{false};
-    opendlv::proxy::GeodeticWgs84Reading gps;
-    opendlv::proxy::GeodeticHeadingReading heading;
+POSDecoder::POSDecoder(std::function<void(const double &latitude, const double &longitude, const std::chrono::system_clock::time_point &tp)> delegateLatitudeLongitude,
+                         std::function<void(const float &heading, const std::chrono::system_clock::time_point &tp)> delegateHeading) noexcept
+    : m_delegateLatitudeLongitude(std::move(delegateLatitudeLongitude))
+    , m_delegateHeading(std::move(delegateHeading)) {}
 
-    constexpr std::size_t POS_PACKET_LENGTH{72};
-    constexpr uint8_t POS_FIRST_BYTE{0xE7};
-    if ( (POS_PACKET_LENGTH == data.size()) && (POS_FIRST_BYTE == static_cast<uint8_t>(data.at(0))) ) {
-        std::stringstream buffer{data};
-
-        // Decode latitude/longitude.
-        {
-            double latitude{0.0};
-            double longitude{0.0};
-
-            // Move to where latitude/longitude are encoded.
-            constexpr uint32_t START_OF_LAT_LON{23};
-            buffer.seekg(START_OF_LAT_LON);
-            buffer.read(reinterpret_cast<char*>(&latitude), sizeof(double));
-            buffer.read(reinterpret_cast<char*>(&longitude), sizeof(double));
-
-            gps.latitude(latitude / M_PI * 180.0).longitude(longitude / M_PI * 180.0);
-        }
-
-        // Decode heading.
-        {
-            float northHeading{0.0f};
-
-            // Move to where heading is encoded.
-            constexpr uint32_t START_OF_HEADING{52};
-            buffer.seekg(START_OF_HEADING);
-
-            // Extract only three bytes from POS.
-            std::array<char, 4> tmp{0, 0, 0, 0};
-            buffer.read(tmp.data(), 3);
-            uint32_t value{0};
-            std::memcpy(&value, tmp.data(), 4);
-            value = le32toh(value);
-            northHeading = value * 1e-6f;
-
-            // Normalize between -M_PI .. M_PI.
-            while (northHeading < -M_PI) {
-                northHeading += 2.0f * static_cast<float>(M_PI);
-            }
-            while (northHeading > M_PI) {
-                northHeading -= 2.0f * static_cast<float>(M_PI);
-            }
-
-            heading.northHeading(northHeading);
-        }
-        retVal = true;
-    }
-    return std::make_pair(retVal, std::make_pair(gps, heading));
+void POSDecoder::decode(const std::string &data, std::chrono::system_clock::time_point &&tp) noexcept {
+    const std::chrono::system_clock::time_point timestamp{tp};
+    (void)timestamp;
+    (void)data;
 }
 
