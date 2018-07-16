@@ -20,7 +20,7 @@ project(opendlv-device-gps-pos)
 ################################################################################
 # Defining the relevant versions of OpenDLV Standard Message Set and libcluon.
 set(OPENDLV_STANDARD_MESSAGE_SET opendlv-standard-message-set-v0.9.1.odvd)
-set(CLUON_COMPLETE cluon-complete-v0.0.90.hpp)
+set(CLUON_COMPLETE cluon-complete-v0.0.104.hpp)
 
 ################################################################################
 # This project requires C++14 or newer.
@@ -62,17 +62,18 @@ add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/cluon-msc
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/${CLUON_COMPLETE})
 
 ################################################################################
-# Generate opendlv-standard-message-set.{hpp,cpp} from ${OPENDLV_STANDARD_MESSAGE_SET} file.
-add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/opendlv-standard-message-set.cpp
+# Generate opendlv-standard-message-set.hpp from ${OPENDLV_STANDARD_MESSAGE_SET} file.
+add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/opendlv-standard-message-set.hpp
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    COMMAND ${CMAKE_BINARY_DIR}/cluon-msc --cpp-sources --cpp-add-include-file=opendlv-standard-message-set.hpp --out=${CMAKE_BINARY_DIR}/opendlv-standard-message-set.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/${OPENDLV_STANDARD_MESSAGE_SET}
-    COMMAND ${CMAKE_BINARY_DIR}/cluon-msc --cpp-headers --out=${CMAKE_BINARY_DIR}/opendlv-standard-message-set.hpp ${CMAKE_CURRENT_SOURCE_DIR}/src/${OPENDLV_STANDARD_MESSAGE_SET}
+    COMMAND ${CMAKE_BINARY_DIR}/cluon-msc --cpp --out=${CMAKE_BINARY_DIR}/opendlv-standard-message-set.hpp ${CMAKE_CURRENT_SOURCE_DIR}/src/${OPENDLV_STANDARD_MESSAGE_SET}
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/${OPENDLV_STANDARD_MESSAGE_SET} ${CMAKE_BINARY_DIR}/cluon-msc)
+# Add current build directory as include directory as it contains generated files.
+include_directories(SYSTEM ${CMAKE_BINARY_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/pos-message-set.cpp
+add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/pos-message-set.hpp
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    COMMAND ${CMAKE_BINARY_DIR}/cluon-msc --cpp-sources --cpp-add-include-file=pos-message-set.hpp --out=${CMAKE_BINARY_DIR}/pos-message-set.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/pos-message-set.odvd
-    COMMAND ${CMAKE_BINARY_DIR}/cluon-msc --cpp-headers --out=${CMAKE_BINARY_DIR}/pos-message-set.hpp ${CMAKE_CURRENT_SOURCE_DIR}/src/pos-message-set.odvd
+    COMMAND ${CMAKE_BINARY_DIR}/cluon-msc --cpp --out=${CMAKE_BINARY_DIR}/pos-message-set.hpp ${CMAKE_CURRENT_SOURCE_DIR}/src/pos-message-set.odvd
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/pos-message-set.odvd ${CMAKE_BINARY_DIR}/cluon-msc)
 
 # Add current build directory as include directory as it contains generated files.
@@ -81,8 +82,13 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 ################################################################################
 # Gather all object code first to avoid double compilation.
-add_library(${PROJECT_NAME}-core OBJECT ${CMAKE_CURRENT_SOURCE_DIR}/src/pos-decoder.cpp ${CMAKE_BINARY_DIR}/opendlv-standard-message-set.cpp ${CMAKE_BINARY_DIR}/pos-message-set.cpp)
+add_library(${PROJECT_NAME}-core OBJECT ${CMAKE_CURRENT_SOURCE_DIR}/src/pos-decoder.cpp)
 set(LIBRARIES Threads::Threads)
+
+# Add dependency to generate .hpp file.
+add_custom_target(generate_opendlv_standard_message_set_hpp DEPENDS ${CMAKE_BINARY_DIR}/opendlv-standard-message-set.hpp)
+add_custom_target(generate_pos_message_set_hpp DEPENDS ${CMAKE_BINARY_DIR}/pos-message-set.hpp)
+add_dependencies(${PROJECT_NAME}-core generate_opendlv_standard_message_set_hpp generate_pos_message_set_hpp)
 
 ################################################################################
 # Create executable.
