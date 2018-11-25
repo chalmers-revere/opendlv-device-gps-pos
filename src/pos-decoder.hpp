@@ -29,6 +29,7 @@
 class POSDecoder {
    private:
         enum GRP_SIZES {
+            BUFFER_SIZE                 = 2048,
             GRP_HEADER_SIZE             = 8,
             GRP_FOOTER_SIZE             = 4,
             TIME_DISTANCE_FIELD_SIZE    = 26,
@@ -55,10 +56,14 @@ class POSDecoder {
    public:
     POSDecoder(std::function<void(const double &latitude, const double &longitude, const std::chrono::system_clock::time_point &tp)> delegateLatitudeLongitude,
                 std::function<void(const float &heading, const std::chrono::system_clock::time_point &tp)> delegateHeading) noexcept;
-    ~POSDecoder() = default;
+    ~POSDecoder();
 
    public:
     void decode(const std::string &data, std::chrono::system_clock::time_point &&tp) noexcept;
+    void decodeOld(const std::string &data, std::chrono::system_clock::time_point &&tp) noexcept;
+
+   private:
+    size_t parseBuffer(uint8_t *buffer, const size_t size, std::chrono::system_clock::time_point &&tp);
 
    private:
     std::function<void(const double &latitude, const double &longitude, const std::chrono::system_clock::time_point &tp)> m_delegateLatitudeLongitude{};
@@ -73,12 +78,15 @@ class POSDecoder {
     opendlv::device::gps::pos::Grp3Data getGRP3(std::stringstream &buffer);
     opendlv::device::gps::pos::GNSSReceiverChannelStatus getGNSSReceiverChannelStatus(std::stringstream &buffer);
     opendlv::device::gps::pos::Grp4Data getGRP4(std::stringstream &buffer);
-    opendlv::device::gps::pos::Grp10001Data getGRP10001(std::stringstream &buffer);
-    opendlv::device::gps::pos::Grp10002Data getGRP10002(std::stringstream &buffer);
+    opendlv::device::gps::pos::Grp10001Data getGRP10001(std::stringstream &buffer, uint32_t payloadSize);
+    opendlv::device::gps::pos::Grp10002Data getGRP10002(std::stringstream &buffer, uint32_t payloadSize);
     opendlv::device::gps::pos::Grp10003Data getGRP10003(std::stringstream &buffer);
-    opendlv::device::gps::pos::Grp10009Data getGRP10009(std::stringstream &buffer);
+    opendlv::device::gps::pos::Grp10009Data getGRP10009(std::stringstream &buffer, uint32_t payloadSize);
 
    private:
+    uint8_t *m_dataBuffer{nullptr};
+    size_t m_size{0};
+
     std::stringstream m_buffer{};
     bool m_foundHeader{false};
     bool m_buffering{false};

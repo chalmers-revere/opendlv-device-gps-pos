@@ -12583,34 +12583,33 @@ TEST_CASE("Test POSDecoder with sample payload.") {
     while ((overallCounter+15) < DATA.size()) {
         const std::string CHUNK{DATA.substr(overallCounter, 15)};
         overallCounter += 15;
-
         d.decode(CHUNK, std::chrono::system_clock::time_point());
     }
 
     REQUIRE(!listOfGPS.empty());
     REQUIRE(!listOfHeadings.empty());
 
-    REQUIRE(5 == listOfGPS.size());
-    REQUIRE(5 == listOfHeadings.size());
+    REQUIRE(491 == listOfGPS.size());
+    REQUIRE(491 == listOfHeadings.size());
 
     REQUIRE(57.70878319 == Approx(listOfGPS.at(0).first));
     REQUIRE(11.94648496 == Approx(listOfGPS.at(0).second));
     REQUIRE(0.04859998822 == Approx(listOfHeadings.at(0)));
 
-    REQUIRE(57.70877756 == Approx(listOfGPS.at(1).first));
-    REQUIRE(11.94647372 == Approx(listOfGPS.at(1).second));
-    REQUIRE(0.04797375947 == Approx(listOfHeadings.at(1)));
+    REQUIRE(57.70878314 == Approx(listOfGPS.at(1).first));
+    REQUIRE(11.94648486 == Approx(listOfGPS.at(1).second));
+    REQUIRE(0.04856316373 == Approx(listOfHeadings.at(1)));
 
-    REQUIRE(57.70877721 == Approx(listOfGPS.at(2).first));
-    REQUIRE(11.94647308 == Approx(listOfGPS.at(2).second));
-    REQUIRE(0.04858877882 == Approx(listOfHeadings.at(2)));
+    REQUIRE(57.70878309 == Approx(listOfGPS.at(2).first));
+    REQUIRE(11.94648475 == Approx(listOfGPS.at(2).second));
+    REQUIRE(0.04882569611 == Approx(listOfHeadings.at(2)));
 
-    REQUIRE(57.70876555 == Approx(listOfGPS.at(3).first));
-    REQUIRE(11.94645516 == Approx(listOfGPS.at(3).second));
-    REQUIRE(0.04692750797 == Approx(listOfHeadings.at(3)));
+    REQUIRE(57.70878303 == Approx(listOfGPS.at(3).first));
+    REQUIRE(11.94648465 == Approx(listOfGPS.at(3).second));
+    REQUIRE(0.04848472401 == Approx(listOfHeadings.at(3)));
 
-    REQUIRE(57.7087598 == Approx(listOfGPS.at(4).first));
-    REQUIRE(11.946457 == Approx(listOfGPS.at(4).second));
-    REQUIRE(0.04562739283 == Approx(listOfHeadings.at(4)));
+    REQUIRE(57.70878298 == Approx(listOfGPS.at(4).first));
+    REQUIRE(11.94648455 == Approx(listOfGPS.at(4).second));
+    REQUIRE(0.04876206815 == Approx(listOfHeadings.at(4)));
 }
 

@@ -27,7 +27,14 @@
 POSDecoder::POSDecoder(std::function<void(const double &latitude, const double &longitude, const std::chrono::system_clock::time_point &tp)> delegateLatitudeLongitude,
                          std::function<void(const float &heading, const std::chrono::system_clock::time_point &tp)> delegateHeading) noexcept
     : m_delegateLatitudeLongitude(std::move(delegateLatitudeLongitude))
-    , m_delegateHeading(std::move(delegateHeading)) {}
+    , m_delegateHeading(std::move(delegateHeading)) {
+    m_dataBuffer = new uint8_t[POSDecoder::BUFFER_SIZE];
+}
+
+POSDecoder::~POSDecoder() {
+    delete [] m_dataBuffer;
+    m_dataBuffer = nullptr;
+}
 
 void POSDecoder::prepareReadingBuffer(std::stringstream &_buffer) {
     if (_buffer.good()) {
@@ -45,6 +52,138 @@ void POSDecoder::prepareReadingBuffer(std::stringstream &_buffer) {
 }
 
 void POSDecoder::decode(const std::string &data, std::chrono::system_clock::time_point &&tp) noexcept {
+    const size_t bytesAvailable{data.size()};
+    size_t bytesCopied{0};
+
+    while (bytesCopied != bytesAvailable) {
+        // How many bytes can we store in our buffer?
+        size_t bytesToCopy{((POSDecoder::BUFFER_SIZE - m_size) < bytesAvailable) ? (POSDecoder::BUFFER_SIZE - m_size) : bytesAvailable};
+        std::memcpy(m_dataBuffer+m_size, data.data(), bytesToCopy);
+        // Store how much we copied.
+        bytesCopied += bytesToCopy;
+        // Booking for the m_buffer fill level.
+        m_size += bytesToCopy;
+        // Consume data from m_buffer.
+        size_t consumed = parseBuffer(m_dataBuffer, m_size, std::move(tp));
+        // Discard processed entries.
+        for (size_t i{0}; (consumed > 0) && (i < (m_size - consumed)); i++) {
+            m_dataBuffer[i] = m_dataBuffer[i + consumed];
+        }
+        m_size -= consumed;
+        // If the parser does not work at all, cancel it.
+        if (m_size >= POSDecoder::BUFFER_SIZE) {
+            break;
+        }
+    }
+}
+
+size_t POSDecoder::parseBuffer(uint8_t *buffer, const size_t size, std::chrono::system_clock::time_point &&tp) {
+    const std::chrono::system_clock::time_point timestamp{std::move(tp)};
+
+    size_t offset{0};
+    while (true) {
+        // Sanity check whether we consumed all data.
+        if ((offset + POSDecoder::GRP_HEADER_SIZE) > size) {
+            return offset;
+        }
+        if ( ('$' == buffer[offset + 0]) &&
+             ('G' == buffer[offset + 1]) &&
+             ('R' == buffer[offset + 2]) &&
+             ('P' == buffer[offset + 3]) ) {
+            union {
+                uint8_t array[2];
+                uint16_t number{0};
+            } twoBytes;
+
+            // Next, read group number.
+            uint16_t groupNumber{0};
+            {
+              twoBytes.array[0] = buffer[offset + 4];
+              twoBytes.array[1] = buffer[offset + 5];
+              groupNumber = le16toh(twoBytes.number);
+            }
+
+            // Next, read message size.
+            uint16_t messageSize{0};
+            {
+              twoBytes.array[0] = buffer[offset + 6];
+              twoBytes.array[1] = buffer[offset + 7];
+              messageSize = le16toh(twoBytes.number);
+            }
+
+            // Check whether we can decode the next message.
+            if ((offset + POSDecoder::GRP_HEADER_SIZE + messageSize) > size) {
+                // We have a partial header and hence, need to wait for more data.
+                return offset;
+            }
+            else {
+                // We can decode the next message.
+                const std::string message(reinterpret_cast<char*>(buffer + offset + POSDecoder::GRP_HEADER_SIZE), messageSize);
+                std::stringstream b(message);
+
+                if (POSDecoder::GRP1 == groupNumber) {
+                    // Decode Applanix GRP1.
+                    opendlv::device::gps::pos::Grp1Data g1Data{getGRP1(b)};
+
+                    if (nullptr != m_delegateLatitudeLongitude) {
+                        m_delegateLatitudeLongitude(g1Data.lat(), g1Data.lon(), timestamp);
+                    }
+                    if (nullptr != m_delegateHeading) {
+                        m_delegateHeading(static_cast<float>(g1Data.heading()), timestamp);
+                    }
+                }
+                else if (POSDecoder::GRP2 == groupNumber) {
+                    // Decode Applanix GRP2.
+                    opendlv::device::gps::pos::Grp2Data g2Data{getGRP2(b)};
+                    (void)g2Data;
+                }
+                else if (POSDecoder::GRP3 == groupNumber) {
+                    // Decode Applanix GRP3.
+                    opendlv::device::gps::pos::Grp3Data g3Data{getGRP3(b)};
+                    (void)g3Data;
+                }
+                else if (POSDecoder::GRP4 == groupNumber) {
+                    // Decode Applanix GRP4.
+                    opendlv::device::gps::pos::Grp4Data g4Data{getGRP4(b)};
+                    (void)g4Data;
+                }
+                else if (POSDecoder::GRP10001 == groupNumber) {
+                    // Decode Applanix GRP10001.
+                    opendlv::device::gps::pos::Grp10001Data g10001Data{getGRP10001(b, messageSize)};
+                    (void)g10001Data;
+                }
+                else if (POSDecoder::GRP10002 == groupNumber) {
+                    // Decode Applanix GRP10002.
+                    opendlv::device::gps::pos::Grp10002Data g10002Data{getGRP10002(b, messageSize)};
+                    (void)g10002Data;
+                }
+                else if (POSDecoder::GRP10003 == groupNumber) {
+                    // Decode Applanix GRP10003.
+                    opendlv::device::gps::pos::Grp10003Data g10003Data{getGRP10003(b)};
+                    (void)g10003Data;
+                }
+                else if (POSDecoder::GRP10009 == groupNumber) {
+                    // Decode Applanix GRP10009.
+                    opendlv::device::gps::pos::Grp10009Data g10009Data{getGRP10009(b, messageSize)};
+                    (void)g10009Data;
+                }
+
+                // We have consumed the message, move offset accordingly.
+                offset += POSDecoder::GRP_HEADER_SIZE + messageSize;
+            }
+        }
+        else {
+            // No $GRP "HEADER bytes found yet; consume one byte and start over.
+            offset++;
+        }
+    }
+    // We should not get here as we will leave the state machine inside
+    // the while loop at certain point. If we are still getting here,
+    // we simply discard everything and start over.
+    return size;
+}
+
+void POSDecoder::decodeOld(const std::string &data, std::chrono::system_clock::time_point &&tp) noexcept {
     const std::chrono::system_clock::time_point timestamp{tp};
     (void)timestamp;
 
@@ -104,12 +243,12 @@ void POSDecoder::decode(const std::string &data, std::chrono::system_clock::time
             }
             else if (POSDecoder::GRP10001 == m_nextPOSMessage) {
                 // Decode Applanix GRP10001.
-                opendlv::device::gps::pos::Grp10001Data g10001Data{getGRP10001(m_buffer)};
+                opendlv::device::gps::pos::Grp10001Data g10001Data{getGRP10001(m_buffer, m_payloadSize)};
                 (void)g10001Data;
             }
             else if (POSDecoder::GRP10002 == m_nextPOSMessage) {
                 // Decode Applanix GRP10002.
-                opendlv::device::gps::pos::Grp10002Data g10002Data{getGRP10002(m_buffer)};
+                opendlv::device::gps::pos::Grp10002Data g10002Data{getGRP10002(m_buffer, m_payloadSize)};
                 (void)g10002Data;
             }
             else if (POSDecoder::GRP10003 == m_nextPOSMessage) {
@@ -119,7 +258,7 @@ void POSDecoder::decode(const std::string &data, std::chrono::system_clock::time
             }
             else if (POSDecoder::GRP10009 == m_nextPOSMessage) {
                 // Decode Applanix GRP10009.
-                opendlv::device::gps::pos::Grp10009Data g10009Data{getGRP10009(m_buffer)};
+                opendlv::device::gps::pos::Grp10009Data g10009Data{getGRP10009(m_buffer, m_payloadSize)};
                 (void)g10009Data;
             }
             else {
@@ -518,7 +657,7 @@ opendlv::device::gps::pos::Grp4Data POSDecoder::getGRP4(std::stringstream &buffe
     return g4Data;
 }
 
-opendlv::device::gps::pos::Grp10001Data POSDecoder::getGRP10001(std::stringstream &buffer) {
+opendlv::device::gps::pos::Grp10001Data POSDecoder::getGRP10001(std::stringstream &buffer, uint32_t payloadSize) {
     opendlv::device::gps::pos::Grp10001Data g10001Data;
 
     if (buffer.good()) {
@@ -542,7 +681,7 @@ opendlv::device::gps::pos::Grp10001Data POSDecoder::getGRP10001(std::stringstrea
         buffer.read(&GNSS_receiver_raw_data[0], byte_count);
 
         // Read padding.
-        for(uint8_t paddingToRead = 0; paddingToRead < ((m_payloadSize - TIME_DISTANCE_FIELD_SIZE - sizeof(GNSS_receiver_type) - sizeof(reserved) - sizeof(byte_count) - byte_count - POSDecoder::GRP_FOOTER_SIZE)); paddingToRead++) {
+        for(uint8_t paddingToRead = 0; paddingToRead < ((payloadSize - TIME_DISTANCE_FIELD_SIZE - sizeof(GNSS_receiver_type) - sizeof(reserved) - sizeof(byte_count) - byte_count - POSDecoder::GRP_FOOTER_SIZE)); paddingToRead++) {
             buffer.read((char *)(&(pad)), sizeof(pad));
         }
 
@@ -554,7 +693,7 @@ opendlv::device::gps::pos::Grp10001Data POSDecoder::getGRP10001(std::stringstrea
     return g10001Data;
 }
 
-opendlv::device::gps::pos::Grp10002Data POSDecoder::getGRP10002(std::stringstream &buffer) {
+opendlv::device::gps::pos::Grp10002Data POSDecoder::getGRP10002(std::stringstream &buffer, uint32_t payloadSize) {
     opendlv::device::gps::pos::Grp10002Data g10002Data;
 
     if (buffer.good()) {
@@ -580,7 +719,7 @@ opendlv::device::gps::pos::Grp10002Data POSDecoder::getGRP10002(std::stringstrea
         data_checksum = le16toh(data_checksum);
 
         // Read padding.
-        for(uint8_t paddingToRead = 0; paddingToRead < ((m_payloadSize - TIME_DISTANCE_FIELD_SIZE - LENGTH_IMUHEADER - sizeof(byte_count) - byte_count - sizeof(data_checksum) - POSDecoder::GRP_FOOTER_SIZE)); paddingToRead++) {
+        for(uint8_t paddingToRead = 0; paddingToRead < ((payloadSize - TIME_DISTANCE_FIELD_SIZE - LENGTH_IMUHEADER - sizeof(byte_count) - byte_count - sizeof(data_checksum) - POSDecoder::GRP_FOOTER_SIZE)); paddingToRead++) {
             buffer.read((char *)(&(pad)), sizeof(pad));
         }
 
@@ -614,9 +753,9 @@ opendlv::device::gps::pos::Grp10003Data POSDecoder::getGRP10003(std::stringstrea
     return g10003Data;
 }
 
-opendlv::device::gps::pos::Grp10009Data POSDecoder::getGRP10009(std::stringstream &buffer) {
+opendlv::device::gps::pos::Grp10009Data POSDecoder::getGRP10009(std::stringstream &buffer, uint32_t payloadSize) {
     // Grp10009 message is identical to Grp10001. Thus, re-use the decoder and simply copy the data.
-    opendlv::device::gps::pos::Grp10001Data g10001Data{getGRP10001(buffer)};
+    opendlv::device::gps::pos::Grp10001Data g10001Data{getGRP10001(buffer, payloadSize)};
 
     opendlv::device::gps::pos::Grp10009Data g10009Data;
     g10009Data.GNSS_receiver_type(g10001Data.GNSS_receiver_type())
