@@ -60,7 +60,6 @@ class POSDecoder {
 
    public:
     void decode(const std::string &data, std::chrono::system_clock::time_point &&tp) noexcept;
-    void decodeOld(const std::string &data, std::chrono::system_clock::time_point &&tp) noexcept;
 
    private:
     size_t parseBuffer(uint8_t *buffer, const size_t size, std::chrono::system_clock::time_point &&tp);
@@ -70,8 +69,6 @@ class POSDecoder {
     std::function<void(const float &heading, const std::chrono::system_clock::time_point &tp)> m_delegateHeading{};
 
    private:
-    void prepareReadingBuffer(std::stringstream &buffer);
-
     opendlv::device::gps::pos::TimeDistance getTimeDistance(std::stringstream &buffer);
     opendlv::device::gps::pos::Grp1Data getGRP1(std::stringstream &buffer);
     opendlv::device::gps::pos::Grp2Data getGRP2(std::stringstream &buffer);
@@ -86,13 +83,6 @@ class POSDecoder {
    private:
     uint8_t *m_dataBuffer{nullptr};
     size_t m_size{0};
-
-    std::stringstream m_buffer{};
-    bool m_foundHeader{false};
-    bool m_buffering{false};
-    uint32_t m_payloadSize{0};
-    uint32_t m_toRemove{0};
-    POSMessages m_nextPOSMessage{POSDecoder::UNKNOWN};
 };
 
 #endif

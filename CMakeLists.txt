@@ -35,7 +35,7 @@ set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
     -D_XOPEN_SOURCE=700 \
     -D_FORTIFY_SOURCE=2 \
-    -g \
+    -O2 \
     -fstack-protector \
     -fomit-frame-pointer \
     -pipe \
