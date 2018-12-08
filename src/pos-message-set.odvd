@@ -38,10 +38,12 @@ message opendlv.device.gps.pos.TimeDistance [id = 532] {
     double time1                        [id = 1];
     double time2                        [id = 2];
     double distanceTag                  [id = 3];
+    uint8 time1Type                     [id = 4];
+    uint8 time2Type                     [id = 5];
 /*
-    TimeType time1Type                  [id = 4];
-    TimeType time2Type                  [id = 5];
-    DistanceType distanceType           [id = 6];
+    TimeType time1Type                  [id = 6];
+    TimeType time2Type                  [id = 7];
+    DistanceType distanceType           [id = 8];
 */
 }
 

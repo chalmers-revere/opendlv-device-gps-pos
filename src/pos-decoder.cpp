@@ -20,15 +20,40 @@
 
 #include <cmath>
 #include <cstring>
+#include <ctime>
 #include <array>
 #include <sstream>
 #include <string>
 
-POSDecoder::POSDecoder(std::function<void(const double &latitude, const double &longitude, const std::chrono::system_clock::time_point &tp)> delegateLatitudeLongitude,
-                         std::function<void(const float &heading, const std::chrono::system_clock::time_point &tp)> delegateHeading) noexcept
+POSDecoder::POSDecoder(std::function<void(const double &latitude, const double &longitude, const cluon::data::TimeStamp &sampleTime)> delegateLatitudeLongitude,
+                         std::function<void(const float &heading, const cluon::data::TimeStamp &sampleTime)> delegateHeading) noexcept
     : m_delegateLatitudeLongitude(std::move(delegateLatitudeLongitude))
     , m_delegateHeading(std::move(delegateHeading)) {
     m_dataBuffer = new uint8_t[POSDecoder::BUFFER_SIZE];
+
+    // Calculate offset between GPS and UTC.
+    auto createTimeFromYYYYMMDD = [](int year, int month, int day){
+        struct tm tm;
+        std::memset(&tm, 0, sizeof(struct tm));
+        tm.tm_year = year - 1900;
+        tm.tm_mon = month - 1;
+        tm.tm_mday = day;
+        return mktime(&tm);
+    };
+
+    time_t currentTime;
+    std::memset(&currentTime, 0, sizeof(time_t));
+    std::time(&currentTime);
+
+    struct tm currentTimeBrokenDown;
+    std::memset(&currentTimeBrokenDown, 0, sizeof(struct tm));
+    gmtime_r(&currentTime, &currentTimeBrokenDown);
+
+    constexpr const int64_t GPS_DELTA_TO_UTC{315964800};
+    constexpr const int64_t SECONDS_PER_WEEK{60*60*24*7};
+    const double diff = difftime(createTimeFromYYYYMMDD(currentTimeBrokenDown.tm_year+1900, currentTimeBrokenDown.tm_mon+1, currentTimeBrokenDown.tm_mday), createTimeFromYYYYMMDD(1980, 1, 6));
+    m_timeOffsetSinceGPSinMicroseconds = (static_cast<int64_t>(diff)/SECONDS_PER_WEEK)*SECONDS_PER_WEEK + GPS_DELTA_TO_UTC;
+    m_timeOffsetSinceGPSinMicroseconds *= static_cast<int64_t>(1000*1000);
 }
 
 POSDecoder::~POSDecoder() {
@@ -63,7 +88,7 @@ void POSDecoder::decode(const std::string &data, std::chrono::system_clock::time
 }
 
 size_t POSDecoder::parseBuffer(uint8_t *buffer, const size_t size, std::chrono::system_clock::time_point &&tp) {
-    const std::chrono::system_clock::time_point timestamp{std::move(tp)};
+    cluon::data::TimeStamp sampleTimeStamp{cluon::time::convert(std::move(tp))};
 
     size_t offset{0};
     while (true) {
@@ -110,11 +135,22 @@ size_t POSDecoder::parseBuffer(uint8_t *buffer, const size_t size, std::chrono::
                     // Decode Applanix GRP1.
                     opendlv::device::gps::pos::Grp1Data g1Data{getGRP1(b)};
 
+                    // Use timestamp from GPS if available.
+                    if (1 == g1Data.timeDistance().time1Type()) {
+                        int64_t seconds{static_cast<int64_t>(floor(g1Data.timeDistance().time1()))};
+                        int64_t microseconds{static_cast<int64_t>(floor((g1Data.timeDistance().time1()-seconds)* static_cast<int64_t>(1000*1000)))};
+
+                        cluon::data::TimeStamp relativeTimeStamp;
+                        relativeTimeStamp.seconds(seconds).microseconds(microseconds);
+
+                        sampleTimeStamp = cluon::time::fromMicroseconds(m_timeOffsetSinceGPSinMicroseconds + cluon::time::toMicroseconds(relativeTimeStamp));
+                    }
+
                     if (nullptr != m_delegateLatitudeLongitude) {
-                        m_delegateLatitudeLongitude(g1Data.lat(), g1Data.lon(), timestamp);
+                        m_delegateLatitudeLongitude(g1Data.lat(), g1Data.lon(), sampleTimeStamp);
                     }
                     if (nullptr != m_delegateHeading) {
-                        m_delegateHeading(static_cast<float>(g1Data.heading()), timestamp);
+                        m_delegateHeading(static_cast<float>(g1Data.heading()), sampleTimeStamp);
                     }
                 }
                 else if (POSDecoder::GRP2 == groupNumber) {
@@ -184,7 +220,7 @@ opendlv::device::gps::pos::TimeDistance POSDecoder::getTimeDistance(std::strings
         buffer.read((char *)(&(timeTypes)), sizeof(timeTypes));
         buffer.read((char *)(&(distanceType)), sizeof(distanceType));
 
-        timedist.time1(time1).time2(time2).distanceTag(distanceTag);
+        timedist.time1(time1).time2(time2).distanceTag(distanceTag).time1Type((timeTypes&0x7)).time2Type((timeTypes>>3));
         // TODO: Add enum support to cluon-msc.
 //        timedist.setTime1Type(static_cast<opendlv::device::gps::pos::TimeDistance::TimeType>(timeTypes & 0x0F));
 //        timedist.setTime2Type(static_cast<opendlv::device::gps::pos::TimeDistance::TimeType>(timeTypes & 0xF0));

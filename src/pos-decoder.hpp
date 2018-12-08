@@ -54,8 +54,8 @@ class POSDecoder {
     POSDecoder &operator=(POSDecoder &&) = delete;
 
    public:
-    POSDecoder(std::function<void(const double &latitude, const double &longitude, const std::chrono::system_clock::time_point &tp)> delegateLatitudeLongitude,
-                std::function<void(const float &heading, const std::chrono::system_clock::time_point &tp)> delegateHeading) noexcept;
+    POSDecoder(std::function<void(const double &latitude, const double &longitude, const cluon::data::TimeStamp &sampleTime)> delegateLatitudeLongitude,
+                std::function<void(const float &heading, const cluon::data::TimeStamp &sampleTime)> delegateHeading) noexcept;
     ~POSDecoder();
 
    public:
@@ -65,8 +65,8 @@ class POSDecoder {
     size_t parseBuffer(uint8_t *buffer, const size_t size, std::chrono::system_clock::time_point &&tp);
 
    private:
-    std::function<void(const double &latitude, const double &longitude, const std::chrono::system_clock::time_point &tp)> m_delegateLatitudeLongitude{};
-    std::function<void(const float &heading, const std::chrono::system_clock::time_point &tp)> m_delegateHeading{};
+    std::function<void(const double &latitude, const double &longitude, const cluon::data::TimeStamp &sampleTime)> m_delegateLatitudeLongitude{};
+    std::function<void(const float &heading, const cluon::data::TimeStamp &sampleTime)> m_delegateHeading{};
 
    private:
     opendlv::device::gps::pos::TimeDistance getTimeDistance(std::stringstream &buffer);
@@ -83,6 +83,7 @@ class POSDecoder {
    private:
     uint8_t *m_dataBuffer{nullptr};
     size_t m_size{0};
+    int64_t m_timeOffsetSinceGPSinMicroseconds{0};
 };
 
 #endif

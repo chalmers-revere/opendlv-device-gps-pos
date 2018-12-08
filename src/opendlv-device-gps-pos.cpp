@@ -44,10 +44,10 @@ int32_t main(int32_t argc, char **argv) {
         };
 
         POSDecoder posDecoder{
-            [&od4Session = od4, senderStamp = ID, VERBOSE](const double &latitude, const double &longitude, const std::chrono::system_clock::time_point &tp) {
+            [&od4Session = od4, senderStamp = ID, VERBOSE](const double &latitude, const double &longitude, const cluon::data::TimeStamp &sampleTime) {
                 opendlv::proxy::GeodeticWgs84Reading m;
                 m.latitude(latitude).longitude(longitude);
-                od4Session.send(m, cluon::time::convert(tp), senderStamp);
+                od4Session.send(m, sampleTime, senderStamp);
 
                 // Print values on console.
                 if (VERBOSE) {
@@ -55,13 +55,13 @@ int32_t main(int32_t argc, char **argv) {
                     m.accept([](uint32_t, const std::string &, const std::string &) {},
                              [&buffer](uint32_t, std::string &&, std::string &&n, auto v) { buffer << n << " = " << v << '\n'; },
                              []() {});
-                    std::cout << buffer.str() << std::endl;
+                    std::cout << buffer.str() << " at " << sampleTime.seconds() << "." << sampleTime.microseconds() << std::endl;
                 }
             },
-            [&od4Session = od4, senderStamp = ID, VERBOSE](const float &heading, const std::chrono::system_clock::time_point &tp) {
+            [&od4Session = od4, senderStamp = ID, VERBOSE](const float &heading, const cluon::data::TimeStamp &sampleTime) {
                 opendlv::proxy::GeodeticHeadingReading m;
                 m.northHeading(heading);
-                od4Session.send(m, cluon::time::convert(tp), senderStamp);
+                od4Session.send(m, sampleTime, senderStamp);
 
                 // Print values on console.
                 if (VERBOSE) {
@@ -69,7 +69,7 @@ int32_t main(int32_t argc, char **argv) {
                     m.accept([](uint32_t, const std::string &, const std::string &) {},
                              [&buffer](uint32_t, std::string &&, std::string &&n, auto v) { buffer << n << " = " << v << '\n'; },
                              []() {});
-                    std::cout << buffer.str() << std::endl;
+                    std::cout << buffer.str() << " at " << sampleTime.seconds() << "." << sampleTime.microseconds() << std::endl;
                 }
             }
         };

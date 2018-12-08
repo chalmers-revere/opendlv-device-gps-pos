@@ -12539,8 +12539,8 @@ TEST_CASE("Test POSDecoder with empty payload.") {
     const std::string DATA;
 
     POSDecoder d{
-        [&latLonCalled](const double&, const double&, const std::chrono::system_clock::time_point &){ latLonCalled = true; },
-        [&headingCalled](const float&, const std::chrono::system_clock::time_point &){ headingCalled = true; }
+        [&latLonCalled](const double&, const double&, const cluon::data::TimeStamp &){ latLonCalled = true; },
+        [&headingCalled](const float&, const cluon::data::TimeStamp &){ headingCalled = true; }
     };
     d.decode(DATA, std::chrono::system_clock::time_point());
 
@@ -12555,8 +12555,8 @@ TEST_CASE("Test POSDecoder with faulty payload.") {
     const std::string DATA{"Hello World"};
 
     POSDecoder d{
-        [&latLonCalled](const double&, const double&, const std::chrono::system_clock::time_point &){ latLonCalled = true; },
-        [&headingCalled](const float&, const std::chrono::system_clock::time_point &){ headingCalled = true; }
+        [&latLonCalled](const double&, const double&, const cluon::data::TimeStamp &){ latLonCalled = true; },
+        [&headingCalled](const float&, const cluon::data::TimeStamp &){ headingCalled = true; }
     };
     d.decode(DATA, std::chrono::system_clock::time_point());
 
@@ -12571,10 +12571,10 @@ TEST_CASE("Test POSDecoder with sample payload.") {
     std::vector<float> listOfHeadings{};
 
     POSDecoder d{
-        [&listOfGPS](const double &lat, const double &lon, const std::chrono::system_clock::time_point &) {
+        [&listOfGPS](const double &lat, const double &lon, const cluon::data::TimeStamp &) {
             listOfGPS.push_back(std::make_pair(lat, lon));
         },
-        [&listOfHeadings](const float &h, const std::chrono::system_clock::time_point &) { 
+        [&listOfHeadings](const float &h, const cluon::data::TimeStamp &) { 
             listOfHeadings.push_back(h);
         }
     };
