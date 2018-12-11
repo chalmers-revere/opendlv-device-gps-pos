@@ -50,7 +50,7 @@ POSDecoder::POSDecoder(std::function<void(const double &latitude, const double &
     gmtime_r(&currentTime, &currentTimeBrokenDown);
 
     const constexpr int32_t GPS_EPOCH_OFFSET{315964800};
-    const constexpr int32_t GPS_LEAP_SECONDS{18};
+    const constexpr int32_t GPS_LEAP_SECONDS{-18};
     constexpr const int64_t SECONDS_PER_WEEK{60*60*24*7};
     const double diff = difftime(createTimeFromYYYYMMDD(currentTimeBrokenDown.tm_year+1900, currentTimeBrokenDown.tm_mon+1, currentTimeBrokenDown.tm_mday), createTimeFromYYYYMMDD(1980, 1, 6));
     m_timeOffsetSinceGPSinMicroseconds = (static_cast<int64_t>(diff)/SECONDS_PER_WEEK)*SECONDS_PER_WEEK + GPS_EPOCH_OFFSET + GPS_LEAP_SECONDS;
