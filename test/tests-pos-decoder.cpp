@@ -12539,6 +12539,10 @@ TEST_CASE("Test POSDecoder with empty payload.") {
     bool grp2Called{false};
     bool grp3Called{false};
     bool grp4Called{false};
+    bool grp10001Called{false};
+    bool grp10002Called{false};
+    bool grp10003Called{false};
+    bool grp10009Called{false};
 
     const std::string DATA;
 
@@ -12548,7 +12552,11 @@ TEST_CASE("Test POSDecoder with empty payload.") {
         [&grp1Called](opendlv::device::gps::pos::Grp1Data, const cluon::data::TimeStamp &){ grp1Called = true; },
         [&grp2Called](opendlv::device::gps::pos::Grp2Data, const cluon::data::TimeStamp &){ grp2Called = true; },
         [&grp3Called](opendlv::device::gps::pos::Grp3Data, const cluon::data::TimeStamp &){ grp3Called = true; },
-        [&grp4Called](opendlv::device::gps::pos::Grp4Data, const cluon::data::TimeStamp &){ grp4Called = true; }
+        [&grp4Called](opendlv::device::gps::pos::Grp4Data, const cluon::data::TimeStamp &){ grp4Called = true; },
+        [&grp10001Called](opendlv::device::gps::pos::Grp10001Data, const cluon::data::TimeStamp &){ grp10001Called = true; },
+        [&grp10002Called](opendlv::device::gps::pos::Grp10002Data, const cluon::data::TimeStamp &){ grp10002Called = true; },
+        [&grp10003Called](opendlv::device::gps::pos::Grp10003Data, const cluon::data::TimeStamp &){ grp10003Called = true; },
+        [&grp10009Called](opendlv::device::gps::pos::Grp10009Data, const cluon::data::TimeStamp &){ grp10009Called = true; }
     };
     d.decode(DATA, std::chrono::system_clock::time_point());
 
@@ -12558,6 +12566,10 @@ TEST_CASE("Test POSDecoder with empty payload.") {
     REQUIRE(!grp2Called);
     REQUIRE(!grp3Called);
     REQUIRE(!grp4Called);
+    REQUIRE(!grp10001Called);
+    REQUIRE(!grp10002Called);
+    REQUIRE(!grp10003Called);
+    REQUIRE(!grp10009Called);
 }
 
 TEST_CASE("Test POSDecoder with faulty payload.") {
@@ -12567,6 +12579,10 @@ TEST_CASE("Test POSDecoder with faulty payload.") {
     bool grp2Called{false};
     bool grp3Called{false};
     bool grp4Called{false};
+    bool grp10001Called{false};
+    bool grp10002Called{false};
+    bool grp10003Called{false};
+    bool grp10009Called{false};
 
     const std::string DATA{"Hello World"};
 
@@ -12576,7 +12592,11 @@ TEST_CASE("Test POSDecoder with faulty payload.") {
         [&grp1Called](opendlv::device::gps::pos::Grp1Data, const cluon::data::TimeStamp &){ grp1Called = true; },
         [&grp2Called](opendlv::device::gps::pos::Grp2Data, const cluon::data::TimeStamp &){ grp2Called = true; },
         [&grp3Called](opendlv::device::gps::pos::Grp3Data, const cluon::data::TimeStamp &){ grp3Called = true; },
-        [&grp4Called](opendlv::device::gps::pos::Grp4Data, const cluon::data::TimeStamp &){ grp4Called = true; }
+        [&grp4Called](opendlv::device::gps::pos::Grp4Data, const cluon::data::TimeStamp &){ grp4Called = true; },
+        [&grp10001Called](opendlv::device::gps::pos::Grp10001Data, const cluon::data::TimeStamp &){ grp10001Called = true; },
+        [&grp10002Called](opendlv::device::gps::pos::Grp10002Data, const cluon::data::TimeStamp &){ grp10002Called = true; },
+        [&grp10003Called](opendlv::device::gps::pos::Grp10003Data, const cluon::data::TimeStamp &){ grp10003Called = true; },
+        [&grp10009Called](opendlv::device::gps::pos::Grp10009Data, const cluon::data::TimeStamp &){ grp10009Called = true; }
     };
     d.decode(DATA, std::chrono::system_clock::time_point());
 
@@ -12586,6 +12606,10 @@ TEST_CASE("Test POSDecoder with faulty payload.") {
     REQUIRE(!grp2Called);
     REQUIRE(!grp3Called);
     REQUIRE(!grp4Called);
+    REQUIRE(!grp10001Called);
+    REQUIRE(!grp10002Called);
+    REQUIRE(!grp10003Called);
+    REQUIRE(!grp10009Called);
 }
 
 TEST_CASE("Test POSDecoder with sample payload.") {
@@ -12593,6 +12617,10 @@ TEST_CASE("Test POSDecoder with sample payload.") {
     bool grp2Called{false};
     bool grp3Called{false};
     bool grp4Called{false};
+    bool grp10001Called{false};
+    bool grp10002Called{false};
+    bool grp10003Called{false};
+    bool grp10009Called{false};
     const std::string DATA(reinterpret_cast<const char*>(POS_DUMP.data()), POS_DUMP.size());
 
     std::vector<std::pair<double, double> > listOfGPS{};
@@ -12608,7 +12636,11 @@ TEST_CASE("Test POSDecoder with sample payload.") {
         [&grp1Called](opendlv::device::gps::pos::Grp1Data, const cluon::data::TimeStamp &){ grp1Called = true; },
         [&grp2Called](opendlv::device::gps::pos::Grp2Data, const cluon::data::TimeStamp &){ grp2Called = true; },
         [&grp3Called](opendlv::device::gps::pos::Grp3Data, const cluon::data::TimeStamp &){ grp3Called = true; },
-        [&grp4Called](opendlv::device::gps::pos::Grp4Data, const cluon::data::TimeStamp &){ grp4Called = true; }
+        [&grp4Called](opendlv::device::gps::pos::Grp4Data, const cluon::data::TimeStamp &){ grp4Called = true; },
+        [&grp10001Called](opendlv::device::gps::pos::Grp10001Data, const cluon::data::TimeStamp &){ grp10001Called = true; },
+        [&grp10002Called](opendlv::device::gps::pos::Grp10002Data, const cluon::data::TimeStamp &){ grp10002Called = true; },
+        [&grp10003Called](opendlv::device::gps::pos::Grp10003Data, const cluon::data::TimeStamp &){ grp10003Called = true; },
+        [&grp10009Called](opendlv::device::gps::pos::Grp10009Data, const cluon::data::TimeStamp &){ grp10009Called = true; }
     };
 
     uint32_t overallCounter{0};
@@ -12648,5 +12680,9 @@ TEST_CASE("Test POSDecoder with sample payload.") {
     REQUIRE(grp2Called);
     REQUIRE(!grp3Called);
     REQUIRE(grp4Called);
+    REQUIRE(grp10001Called);
+    REQUIRE(!grp10002Called);
+    REQUIRE(!grp10003Called);
+    REQUIRE(!grp10009Called);
 }
 

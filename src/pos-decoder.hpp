@@ -59,7 +59,11 @@ class POSDecoder {
                std::function<void(opendlv::device::gps::pos::Grp1Data d, const cluon::data::TimeStamp &sampleTime)> d1,
                std::function<void(opendlv::device::gps::pos::Grp2Data d, const cluon::data::TimeStamp &sampleTime)> d2,
                std::function<void(opendlv::device::gps::pos::Grp3Data d, const cluon::data::TimeStamp &sampleTime)> d3,
-               std::function<void(opendlv::device::gps::pos::Grp4Data d, const cluon::data::TimeStamp &sampleTime)> d4) noexcept;
+               std::function<void(opendlv::device::gps::pos::Grp4Data d, const cluon::data::TimeStamp &sampleTime)> d4,
+               std::function<void(opendlv::device::gps::pos::Grp10001Data d, const cluon::data::TimeStamp &sampleTime)> d10001,
+               std::function<void(opendlv::device::gps::pos::Grp10002Data d, const cluon::data::TimeStamp &sampleTime)> d10002,
+               std::function<void(opendlv::device::gps::pos::Grp10003Data d, const cluon::data::TimeStamp &sampleTime)> d10003,
+               std::function<void(opendlv::device::gps::pos::Grp10009Data d, const cluon::data::TimeStamp &sampleTime)> d10009) noexcept;
     ~POSDecoder();
 
    public:
@@ -76,6 +80,10 @@ class POSDecoder {
     std::function<void(opendlv::device::gps::pos::Grp2Data d, const cluon::data::TimeStamp &sampleTime)> m_delegateGrp2Data{};
     std::function<void(opendlv::device::gps::pos::Grp3Data d, const cluon::data::TimeStamp &sampleTime)> m_delegateGrp3Data{};
     std::function<void(opendlv::device::gps::pos::Grp4Data d, const cluon::data::TimeStamp &sampleTime)> m_delegateGrp4Data{};
+    std::function<void(opendlv::device::gps::pos::Grp10001Data d, const cluon::data::TimeStamp &sampleTime)> m_delegateGrp10001Data{};
+    std::function<void(opendlv::device::gps::pos::Grp10002Data d, const cluon::data::TimeStamp &sampleTime)> m_delegateGrp10002Data{};
+    std::function<void(opendlv::device::gps::pos::Grp10003Data d, const cluon::data::TimeStamp &sampleTime)> m_delegateGrp10003Data{};
+    std::function<void(opendlv::device::gps::pos::Grp10009Data d, const cluon::data::TimeStamp &sampleTime)> m_delegateGrp10009Data{};
 
    private:
     opendlv::device::gps::pos::TimeDistance getTimeDistance(std::stringstream &buffer);

@@ -30,13 +30,21 @@ POSDecoder::POSDecoder(std::function<void(const double &latitude, const double &
                        std::function<void(opendlv::device::gps::pos::Grp1Data d, const cluon::data::TimeStamp &sampleTime)> delegateGrp1Data,
                        std::function<void(opendlv::device::gps::pos::Grp2Data d, const cluon::data::TimeStamp &sampleTime)> delegateGrp2Data,
                        std::function<void(opendlv::device::gps::pos::Grp3Data d, const cluon::data::TimeStamp &sampleTime)> delegateGrp3Data,
-                       std::function<void(opendlv::device::gps::pos::Grp4Data d, const cluon::data::TimeStamp &sampleTime)> delegateGrp4Data) noexcept
+                       std::function<void(opendlv::device::gps::pos::Grp4Data d, const cluon::data::TimeStamp &sampleTime)> delegateGrp4Data,
+                       std::function<void(opendlv::device::gps::pos::Grp10001Data d, const cluon::data::TimeStamp &sampleTime)> d10001,
+                       std::function<void(opendlv::device::gps::pos::Grp10002Data d, const cluon::data::TimeStamp &sampleTime)> d10002,
+                       std::function<void(opendlv::device::gps::pos::Grp10003Data d, const cluon::data::TimeStamp &sampleTime)> d10003,
+                       std::function<void(opendlv::device::gps::pos::Grp10009Data d, const cluon::data::TimeStamp &sampleTime)> d10009) noexcept
     : m_delegateLatitudeLongitude(std::move(delegateLatitudeLongitude))
     , m_delegateHeading(std::move(delegateHeading))
     , m_delegateGrp1Data(std::move(delegateGrp1Data))
     , m_delegateGrp2Data(std::move(delegateGrp2Data))
     , m_delegateGrp3Data(std::move(delegateGrp3Data))
-    , m_delegateGrp4Data(std::move(delegateGrp4Data)) {
+    , m_delegateGrp4Data(std::move(delegateGrp4Data))
+    , m_delegateGrp10001Data(std::move(d10001))
+    , m_delegateGrp10002Data(std::move(d10002))
+    , m_delegateGrp10003Data(std::move(d10003))
+    , m_delegateGrp10009Data(std::move(d10009)) {
     m_dataBuffer = new uint8_t[POSDecoder::BUFFER_SIZE];
 
     // Calculate offset between GPS and UTC.
@@ -211,22 +219,54 @@ size_t POSDecoder::parseBuffer(uint8_t *buffer, const size_t size, std::chrono::
                 else if (POSDecoder::GRP10001 == groupNumber) {
                     // Decode Applanix GRP10001.
                     opendlv::device::gps::pos::Grp10001Data g10001Data{getGRP10001(b, messageSize)};
-                    (void)g10001Data;
+
+                    // Use timestamp from GPS if available.
+                    if (1 == g10001Data.timeDistance().time1Type()) {
+                        sampleTimeStamp = extractTimeDistance(g10001Data.timeDistance().time1());
+                    }
+
+                    if (nullptr != m_delegateGrp10001Data) {
+                        m_delegateGrp10001Data(g10001Data, sampleTimeStamp);
+                    }
                 }
                 else if (POSDecoder::GRP10002 == groupNumber) {
                     // Decode Applanix GRP10002.
                     opendlv::device::gps::pos::Grp10002Data g10002Data{getGRP10002(b, messageSize)};
-                    (void)g10002Data;
+
+                    // Use timestamp from GPS if available.
+                    if (1 == g10002Data.timeDistance().time1Type()) {
+                        sampleTimeStamp = extractTimeDistance(g10002Data.timeDistance().time1());
+                    }
+
+                    if (nullptr != m_delegateGrp10002Data) {
+                        m_delegateGrp10002Data(g10002Data, sampleTimeStamp);
+                    }
                 }
                 else if (POSDecoder::GRP10003 == groupNumber) {
                     // Decode Applanix GRP10003.
                     opendlv::device::gps::pos::Grp10003Data g10003Data{getGRP10003(b)};
-                    (void)g10003Data;
+
+                    // Use timestamp from GPS if available.
+                    if (1 == g10003Data.timeDistance().time1Type()) {
+                        sampleTimeStamp = extractTimeDistance(g10003Data.timeDistance().time1());
+                    }
+
+                    if (nullptr != m_delegateGrp10003Data) {
+                        m_delegateGrp10003Data(g10003Data, sampleTimeStamp);
+                    }
                 }
                 else if (POSDecoder::GRP10009 == groupNumber) {
                     // Decode Applanix GRP10009.
                     opendlv::device::gps::pos::Grp10009Data g10009Data{getGRP10009(b, messageSize)};
-                    (void)g10009Data;
+
+                    // Use timestamp from GPS if available.
+                    if (1 == g10009Data.timeDistance().time1Type()) {
+                        sampleTimeStamp = extractTimeDistance(g10009Data.timeDistance().time1());
+                    }
+
+                    if (nullptr != m_delegateGrp10009Data) {
+                        m_delegateGrp10009Data(g10009Data, sampleTimeStamp);
+                    }
                 }
 
                 // We have consumed the message, move offset accordingly.
