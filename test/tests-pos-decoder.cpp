@@ -12537,6 +12537,7 @@ TEST_CASE("Test POSDecoder with empty payload.") {
     bool headingCalled{false};
     bool grp1Called{false};
     bool grp2Called{false};
+    bool grp3Called{false};
 
     const std::string DATA;
 
@@ -12544,28 +12545,8 @@ TEST_CASE("Test POSDecoder with empty payload.") {
         [&latLonCalled](const double&, const double&, const cluon::data::TimeStamp &){ latLonCalled = true; },
         [&headingCalled](const float&, const cluon::data::TimeStamp &){ headingCalled = true; },
         [&grp1Called](opendlv::device::gps::pos::Grp1Data, const cluon::data::TimeStamp &){ grp1Called = true; },
-        [&grp2Called](opendlv::device::gps::pos::Grp2Data, const cluon::data::TimeStamp &){ grp2Called = true; }
-    };
-    d.decode(DATA, std::chrono::system_clock::time_point());
-
-    REQUIRE(!latLonCalled);
-    REQUIRE(!headingCalled);
-    REQUIRE(!grp1Called);
-}
-
-TEST_CASE("Test POSDecoder with faulty payload.") {
-    bool latLonCalled{false};
-    bool headingCalled{false};
-    bool grp1Called{false};
-    bool grp2Called{false};
-
-    const std::string DATA{"Hello World"};
-
-    POSDecoder d{
-        [&latLonCalled](const double&, const double&, const cluon::data::TimeStamp &){ latLonCalled = true; },
-        [&headingCalled](const float&, const cluon::data::TimeStamp &){ headingCalled = true; },
-        [&grp1Called](opendlv::device::gps::pos::Grp1Data, const cluon::data::TimeStamp &){ grp1Called = true; },
-        [&grp2Called](opendlv::device::gps::pos::Grp2Data, const cluon::data::TimeStamp &){ grp2Called = true; }
+        [&grp2Called](opendlv::device::gps::pos::Grp2Data, const cluon::data::TimeStamp &){ grp2Called = true; },
+        [&grp3Called](opendlv::device::gps::pos::Grp3Data, const cluon::data::TimeStamp &){ grp3Called = true; }
     };
     d.decode(DATA, std::chrono::system_clock::time_point());
 
@@ -12573,11 +12554,38 @@ TEST_CASE("Test POSDecoder with faulty payload.") {
     REQUIRE(!headingCalled);
     REQUIRE(!grp1Called);
     REQUIRE(!grp2Called);
+    REQUIRE(!grp3Called);
+}
+
+TEST_CASE("Test POSDecoder with faulty payload.") {
+    bool latLonCalled{false};
+    bool headingCalled{false};
+    bool grp1Called{false};
+    bool grp2Called{false};
+    bool grp3Called{false};
+
+    const std::string DATA{"Hello World"};
+
+    POSDecoder d{
+        [&latLonCalled](const double&, const double&, const cluon::data::TimeStamp &){ latLonCalled = true; },
+        [&headingCalled](const float&, const cluon::data::TimeStamp &){ headingCalled = true; },
+        [&grp1Called](opendlv::device::gps::pos::Grp1Data, const cluon::data::TimeStamp &){ grp1Called = true; },
+        [&grp2Called](opendlv::device::gps::pos::Grp2Data, const cluon::data::TimeStamp &){ grp2Called = true; },
+        [&grp3Called](opendlv::device::gps::pos::Grp3Data, const cluon::data::TimeStamp &){ grp3Called = true; }
+    };
+    d.decode(DATA, std::chrono::system_clock::time_point());
+
+    REQUIRE(!latLonCalled);
+    REQUIRE(!headingCalled);
+    REQUIRE(!grp1Called);
+    REQUIRE(!grp2Called);
+    REQUIRE(!grp3Called);
 }
 
 TEST_CASE("Test POSDecoder with sample payload.") {
     bool grp1Called{false};
     bool grp2Called{false};
+    bool grp3Called{false};
     const std::string DATA(reinterpret_cast<const char*>(POS_DUMP.data()), POS_DUMP.size());
 
     std::vector<std::pair<double, double> > listOfGPS{};
@@ -12591,7 +12599,8 @@ TEST_CASE("Test POSDecoder with sample payload.") {
             listOfHeadings.push_back(h);
         },
         [&grp1Called](opendlv::device::gps::pos::Grp1Data, const cluon::data::TimeStamp &){ grp1Called = true; },
-        [&grp2Called](opendlv::device::gps::pos::Grp2Data, const cluon::data::TimeStamp &){ grp2Called = true; }
+        [&grp2Called](opendlv::device::gps::pos::Grp2Data, const cluon::data::TimeStamp &){ grp2Called = true; },
+        [&grp3Called](opendlv::device::gps::pos::Grp3Data, const cluon::data::TimeStamp &){ grp3Called = true; }
     };
 
     uint32_t overallCounter{0};
@@ -12629,5 +12638,6 @@ TEST_CASE("Test POSDecoder with sample payload.") {
 
     REQUIRE(grp1Called);
     REQUIRE(grp2Called);
+    REQUIRE(!grp3Called);
 }
 
