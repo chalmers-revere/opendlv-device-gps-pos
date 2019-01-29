@@ -58,7 +58,8 @@ class POSDecoder {
                std::function<void(const float &heading, const cluon::data::TimeStamp &sampleTime)> delegateHeading,
                std::function<void(opendlv::device::gps::pos::Grp1Data d, const cluon::data::TimeStamp &sampleTime)> d1,
                std::function<void(opendlv::device::gps::pos::Grp2Data d, const cluon::data::TimeStamp &sampleTime)> d2,
-               std::function<void(opendlv::device::gps::pos::Grp3Data d, const cluon::data::TimeStamp &sampleTime)> d3) noexcept;
+               std::function<void(opendlv::device::gps::pos::Grp3Data d, const cluon::data::TimeStamp &sampleTime)> d3,
+               std::function<void(opendlv::device::gps::pos::Grp4Data d, const cluon::data::TimeStamp &sampleTime)> d4) noexcept;
     ~POSDecoder();
 
    public:
@@ -74,6 +75,7 @@ class POSDecoder {
     std::function<void(opendlv::device::gps::pos::Grp1Data d, const cluon::data::TimeStamp &sampleTime)> m_delegateGrp1Data{};
     std::function<void(opendlv::device::gps::pos::Grp2Data d, const cluon::data::TimeStamp &sampleTime)> m_delegateGrp2Data{};
     std::function<void(opendlv::device::gps::pos::Grp3Data d, const cluon::data::TimeStamp &sampleTime)> m_delegateGrp3Data{};
+    std::function<void(opendlv::device::gps::pos::Grp4Data d, const cluon::data::TimeStamp &sampleTime)> m_delegateGrp4Data{};
 
    private:
     opendlv::device::gps::pos::TimeDistance getTimeDistance(std::stringstream &buffer);

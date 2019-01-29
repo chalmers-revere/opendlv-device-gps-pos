@@ -29,12 +29,14 @@ POSDecoder::POSDecoder(std::function<void(const double &latitude, const double &
                        std::function<void(const float &heading, const cluon::data::TimeStamp &sampleTime)> delegateHeading,
                        std::function<void(opendlv::device::gps::pos::Grp1Data d, const cluon::data::TimeStamp &sampleTime)> delegateGrp1Data,
                        std::function<void(opendlv::device::gps::pos::Grp2Data d, const cluon::data::TimeStamp &sampleTime)> delegateGrp2Data,
-                       std::function<void(opendlv::device::gps::pos::Grp3Data d, const cluon::data::TimeStamp &sampleTime)> delegateGrp3Data) noexcept
+                       std::function<void(opendlv::device::gps::pos::Grp3Data d, const cluon::data::TimeStamp &sampleTime)> delegateGrp3Data,
+                       std::function<void(opendlv::device::gps::pos::Grp4Data d, const cluon::data::TimeStamp &sampleTime)> delegateGrp4Data) noexcept
     : m_delegateLatitudeLongitude(std::move(delegateLatitudeLongitude))
     , m_delegateHeading(std::move(delegateHeading))
     , m_delegateGrp1Data(std::move(delegateGrp1Data))
     , m_delegateGrp2Data(std::move(delegateGrp2Data))
-    , m_delegateGrp3Data(std::move(delegateGrp3Data)) {
+    , m_delegateGrp3Data(std::move(delegateGrp3Data))
+    , m_delegateGrp4Data(std::move(delegateGrp4Data)) {
     m_dataBuffer = new uint8_t[POSDecoder::BUFFER_SIZE];
 
     // Calculate offset between GPS and UTC.
@@ -196,7 +198,15 @@ size_t POSDecoder::parseBuffer(uint8_t *buffer, const size_t size, std::chrono::
                 else if (POSDecoder::GRP4 == groupNumber) {
                     // Decode Applanix GRP4.
                     opendlv::device::gps::pos::Grp4Data g4Data{getGRP4(b)};
-                    (void)g4Data;
+
+                    // Use timestamp from GPS if available.
+                    if (1 == g4Data.timeDistance().time1Type()) {
+                        sampleTimeStamp = extractTimeDistance(g4Data.timeDistance().time1());
+                    }
+
+                    if (nullptr != m_delegateGrp4Data) {
+                        m_delegateGrp4Data(g4Data, sampleTimeStamp);
+                    }
                 }
                 else if (POSDecoder::GRP10001 == groupNumber) {
                     // Decode Applanix GRP10001.
