@@ -56,7 +56,8 @@ class POSDecoder {
    public:
     POSDecoder(std::function<void(const double &latitude, const double &longitude, const cluon::data::TimeStamp &sampleTime)> delegateLatitudeLongitude,
                std::function<void(const float &heading, const cluon::data::TimeStamp &sampleTime)> delegateHeading,
-               std::function<void(opendlv::device::gps::pos::Grp1Data grp1Data, const cluon::data::TimeStamp &sampleTime)> delegateGrp1Data) noexcept;
+               std::function<void(opendlv::device::gps::pos::Grp1Data grp1Data, const cluon::data::TimeStamp &sampleTime)> delegateGrp1Data,
+               std::function<void(opendlv::device::gps::pos::Grp2Data grp2Data, const cluon::data::TimeStamp &sampleTime)> delegateGrp2Data) noexcept;
     ~POSDecoder();
 
    public:
@@ -70,6 +71,7 @@ class POSDecoder {
     std::function<void(const float &heading, const cluon::data::TimeStamp &sampleTime)> m_delegateHeading{};
 
     std::function<void(opendlv::device::gps::pos::Grp1Data grp1Data, const cluon::data::TimeStamp &sampleTime)> m_delegateGrp1Data{};
+    std::function<void(opendlv::device::gps::pos::Grp2Data grp2Data, const cluon::data::TimeStamp &sampleTime)> m_delegateGrp2Data{};
 
    private:
     opendlv::device::gps::pos::TimeDistance getTimeDistance(std::stringstream &buffer);

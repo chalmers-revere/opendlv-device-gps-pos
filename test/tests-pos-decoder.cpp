@@ -12536,13 +12536,15 @@ TEST_CASE("Test POSDecoder with empty payload.") {
     bool latLonCalled{false};
     bool headingCalled{false};
     bool grp1Called{false};
+    bool grp2Called{false};
 
     const std::string DATA;
 
     POSDecoder d{
         [&latLonCalled](const double&, const double&, const cluon::data::TimeStamp &){ latLonCalled = true; },
         [&headingCalled](const float&, const cluon::data::TimeStamp &){ headingCalled = true; },
-        [&grp1Called](opendlv::device::gps::pos::Grp1Data, const cluon::data::TimeStamp &){ grp1Called = true; }
+        [&grp1Called](opendlv::device::gps::pos::Grp1Data, const cluon::data::TimeStamp &){ grp1Called = true; },
+        [&grp2Called](opendlv::device::gps::pos::Grp2Data, const cluon::data::TimeStamp &){ grp2Called = true; }
     };
     d.decode(DATA, std::chrono::system_clock::time_point());
 
@@ -12555,23 +12557,27 @@ TEST_CASE("Test POSDecoder with faulty payload.") {
     bool latLonCalled{false};
     bool headingCalled{false};
     bool grp1Called{false};
+    bool grp2Called{false};
 
     const std::string DATA{"Hello World"};
 
     POSDecoder d{
         [&latLonCalled](const double&, const double&, const cluon::data::TimeStamp &){ latLonCalled = true; },
         [&headingCalled](const float&, const cluon::data::TimeStamp &){ headingCalled = true; },
-        [&grp1Called](opendlv::device::gps::pos::Grp1Data, const cluon::data::TimeStamp &){ grp1Called = true; }
+        [&grp1Called](opendlv::device::gps::pos::Grp1Data, const cluon::data::TimeStamp &){ grp1Called = true; },
+        [&grp2Called](opendlv::device::gps::pos::Grp2Data, const cluon::data::TimeStamp &){ grp2Called = true; }
     };
     d.decode(DATA, std::chrono::system_clock::time_point());
 
     REQUIRE(!latLonCalled);
     REQUIRE(!headingCalled);
     REQUIRE(!grp1Called);
+    REQUIRE(!grp2Called);
 }
 
 TEST_CASE("Test POSDecoder with sample payload.") {
     bool grp1Called{false};
+    bool grp2Called{false};
     const std::string DATA(reinterpret_cast<const char*>(POS_DUMP.data()), POS_DUMP.size());
 
     std::vector<std::pair<double, double> > listOfGPS{};
@@ -12584,7 +12590,8 @@ TEST_CASE("Test POSDecoder with sample payload.") {
         [&listOfHeadings](const float &h, const cluon::data::TimeStamp &) { 
             listOfHeadings.push_back(h);
         },
-        [&grp1Called](opendlv::device::gps::pos::Grp1Data, const cluon::data::TimeStamp &){ grp1Called = true; }
+        [&grp1Called](opendlv::device::gps::pos::Grp1Data, const cluon::data::TimeStamp &){ grp1Called = true; },
+        [&grp2Called](opendlv::device::gps::pos::Grp2Data, const cluon::data::TimeStamp &){ grp2Called = true; }
     };
 
     uint32_t overallCounter{0};
@@ -12621,5 +12628,6 @@ TEST_CASE("Test POSDecoder with sample payload.") {
     REQUIRE(0.04876206815 == Approx(listOfHeadings.at(4)));
 
     REQUIRE(grp1Called);
+    REQUIRE(grp2Called);
 }
 

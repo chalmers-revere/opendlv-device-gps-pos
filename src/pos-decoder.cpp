@@ -27,10 +27,12 @@
 
 POSDecoder::POSDecoder(std::function<void(const double &latitude, const double &longitude, const cluon::data::TimeStamp &sampleTime)> delegateLatitudeLongitude,
                        std::function<void(const float &heading, const cluon::data::TimeStamp &sampleTime)> delegateHeading,
-                       std::function<void(opendlv::device::gps::pos::Grp1Data grp1Data, const cluon::data::TimeStamp &sampleTime)> delegateGrp1Data) noexcept
+                       std::function<void(opendlv::device::gps::pos::Grp1Data grp1Data, const cluon::data::TimeStamp &sampleTime)> delegateGrp1Data,
+                       std::function<void(opendlv::device::gps::pos::Grp2Data grp2Data, const cluon::data::TimeStamp &sampleTime)> delegateGrp2Data) noexcept
     : m_delegateLatitudeLongitude(std::move(delegateLatitudeLongitude))
     , m_delegateHeading(std::move(delegateHeading))
-    , m_delegateGrp1Data(std::move(delegateGrp1Data)) {
+    , m_delegateGrp1Data(std::move(delegateGrp1Data))
+    , m_delegateGrp2Data(std::move(delegateGrp2Data)) {
     m_dataBuffer = new uint8_t[POSDecoder::BUFFER_SIZE];
 
     // Calculate offset between GPS and UTC.
@@ -166,7 +168,15 @@ size_t POSDecoder::parseBuffer(uint8_t *buffer, const size_t size, std::chrono::
                 else if (POSDecoder::GRP2 == groupNumber) {
                     // Decode Applanix GRP2.
                     opendlv::device::gps::pos::Grp2Data g2Data{getGRP2(b)};
-                    (void)g2Data;
+
+                    // Use timestamp from GPS if available.
+                    if (1 == g2Data.timeDistance().time1Type()) {
+                        sampleTimeStamp = extractTimeDistance(g2Data.timeDistance().time1());
+                    }
+
+                    if (nullptr != m_delegateGrp2Data) {
+                        m_delegateGrp2Data(g2Data, sampleTimeStamp);
+                    }
                 }
                 else if (POSDecoder::GRP3 == groupNumber) {
                     // Decode Applanix GRP3.
