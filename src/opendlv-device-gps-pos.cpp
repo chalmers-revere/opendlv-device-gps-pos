@@ -71,6 +71,18 @@ int32_t main(int32_t argc, char **argv) {
                              []() {});
                     std::cout << buffer.str() << " at " << sampleTime.seconds() << "." << sampleTime.microseconds() << std::endl;
                 }
+            },
+            [&od4Session = od4, senderStamp = ID, VERBOSE](opendlv::device::gps::pos::Grp1Data m, const cluon::data::TimeStamp &sampleTime) {
+                od4Session.send(m, sampleTime, senderStamp);
+
+                // Print values on console.
+                if (VERBOSE) {
+                    std::stringstream buffer;
+                    m.accept([](uint32_t, const std::string &, const std::string &) {},
+                             [&buffer](uint32_t, std::string &&, std::string &&n, auto v) { buffer << n << " = " << v << '\n'; },
+                             []() {});
+                    std::cout << buffer.str() << " at " << sampleTime.seconds() << "." << sampleTime.microseconds() << std::endl;
+                }
             }
         };
 

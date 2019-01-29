@@ -26,9 +26,11 @@
 #include <string>
 
 POSDecoder::POSDecoder(std::function<void(const double &latitude, const double &longitude, const cluon::data::TimeStamp &sampleTime)> delegateLatitudeLongitude,
-                         std::function<void(const float &heading, const cluon::data::TimeStamp &sampleTime)> delegateHeading) noexcept
+                       std::function<void(const float &heading, const cluon::data::TimeStamp &sampleTime)> delegateHeading,
+                       std::function<void(opendlv::device::gps::pos::Grp1Data grp1Data, const cluon::data::TimeStamp &sampleTime)> delegateGrp1Data) noexcept
     : m_delegateLatitudeLongitude(std::move(delegateLatitudeLongitude))
-    , m_delegateHeading(std::move(delegateHeading)) {
+    , m_delegateHeading(std::move(delegateHeading))
+    , m_delegateGrp1Data(std::move(delegateGrp1Data)) {
     m_dataBuffer = new uint8_t[POSDecoder::BUFFER_SIZE];
 
     // Calculate offset between GPS and UTC.
@@ -91,6 +93,16 @@ void POSDecoder::decode(const std::string &data, std::chrono::system_clock::time
 size_t POSDecoder::parseBuffer(uint8_t *buffer, const size_t size, std::chrono::system_clock::time_point &&tp) {
     cluon::data::TimeStamp sampleTimeStamp{cluon::time::convert(std::move(tp))};
 
+    auto extractTimeDistance = [timeOffsetSinceGPSinMicroseconds = m_timeOffsetSinceGPSinMicroseconds](double time1){
+        int64_t seconds{static_cast<int64_t>(floor(time1))};
+        int64_t microseconds{static_cast<int64_t>(floor((time1-seconds)* static_cast<int64_t>(1000*1000)))};
+
+        cluon::data::TimeStamp relativeTimeStamp;
+        relativeTimeStamp.seconds(seconds).microseconds(microseconds);
+
+        return cluon::time::fromMicroseconds(timeOffsetSinceGPSinMicroseconds + cluon::time::toMicroseconds(relativeTimeStamp));
+    };
+
     size_t offset{0};
     while (true) {
         // Sanity check whether we consumed all data.
@@ -138,13 +150,7 @@ size_t POSDecoder::parseBuffer(uint8_t *buffer, const size_t size, std::chrono::
 
                     // Use timestamp from GPS if available.
                     if (1 == g1Data.timeDistance().time1Type()) {
-                        int64_t seconds{static_cast<int64_t>(floor(g1Data.timeDistance().time1()))};
-                        int64_t microseconds{static_cast<int64_t>(floor((g1Data.timeDistance().time1()-seconds)* static_cast<int64_t>(1000*1000)))};
-
-                        cluon::data::TimeStamp relativeTimeStamp;
-                        relativeTimeStamp.seconds(seconds).microseconds(microseconds);
-
-                        sampleTimeStamp = cluon::time::fromMicroseconds(m_timeOffsetSinceGPSinMicroseconds + cluon::time::toMicroseconds(relativeTimeStamp));
+                        sampleTimeStamp = extractTimeDistance(g1Data.timeDistance().time1());
                     }
 
                     if (nullptr != m_delegateLatitudeLongitude) {
@@ -152,6 +158,9 @@ size_t POSDecoder::parseBuffer(uint8_t *buffer, const size_t size, std::chrono::
                     }
                     if (nullptr != m_delegateHeading) {
                         m_delegateHeading(static_cast<float>(g1Data.heading()), sampleTimeStamp);
+                    }
+                    if (nullptr != m_delegateGrp1Data) {
+                        m_delegateGrp1Data(g1Data, sampleTimeStamp);
                     }
                 }
                 else if (POSDecoder::GRP2 == groupNumber) {
