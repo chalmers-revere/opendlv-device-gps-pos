@@ -105,7 +105,7 @@ void POSDecoder::decode(const std::string &data, std::chrono::system_clock::time
 }
 
 size_t POSDecoder::parseBuffer(uint8_t *buffer, const size_t size, std::chrono::system_clock::time_point &&tp) {
-    cluon::data::TimeStamp sampleTimeStamp{cluon::time::convert(std::move(tp))};
+    cluon::data::TimeStamp timeStampFromPacket{cluon::time::convert(std::move(tp))};
 
     auto extractTimeDistance = [timeOffsetSinceGPSinMicroseconds = m_timeOffsetSinceGPSinMicroseconds](double time1){
         int64_t seconds{static_cast<int64_t>(floor(time1))};
@@ -154,6 +154,8 @@ size_t POSDecoder::parseBuffer(uint8_t *buffer, const size_t size, std::chrono::
                 return offset;
             }
             else {
+                cluon::data::TimeStamp sampleTimeStamp{timeStampFromPacket};
+
                 // We can decode the next message.
                 const std::string message(reinterpret_cast<char*>(buffer + offset + POSDecoder::GRP_HEADER_SIZE), messageSize);
                 std::stringstream b(message);
