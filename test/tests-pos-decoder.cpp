@@ -12546,7 +12546,7 @@ TEST_CASE("Test POSDecoder with empty payload.") {
 
     const std::string DATA;
 
-    POSDecoder d{
+    POSDecoder d{false,
         [&latLonCalled](const double&, const double&, const cluon::data::TimeStamp &){ latLonCalled = true; },
         [&headingCalled](const float&, const cluon::data::TimeStamp &){ headingCalled = true; },
         [&grp1Called](opendlv::device::gps::pos::Grp1Data, const cluon::data::TimeStamp &){ grp1Called = true; },
@@ -12586,7 +12586,7 @@ TEST_CASE("Test POSDecoder with faulty payload.") {
 
     const std::string DATA{"Hello World"};
 
-    POSDecoder d{
+    POSDecoder d{false,
         [&latLonCalled](const double&, const double&, const cluon::data::TimeStamp &){ latLonCalled = true; },
         [&headingCalled](const float&, const cluon::data::TimeStamp &){ headingCalled = true; },
         [&grp1Called](opendlv::device::gps::pos::Grp1Data, const cluon::data::TimeStamp &){ grp1Called = true; },
@@ -12626,7 +12626,7 @@ TEST_CASE("Test POSDecoder with sample payload.") {
     std::vector<std::pair<double, double> > listOfGPS{};
     std::vector<float> listOfHeadings{};
 
-    POSDecoder d{
+    POSDecoder d{false,
         [&listOfGPS](const double &lat, const double &lon, const cluon::data::TimeStamp &) {
             listOfGPS.push_back(std::make_pair(lat, lon));
         },

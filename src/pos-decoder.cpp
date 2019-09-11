@@ -25,7 +25,8 @@
 #include <sstream>
 #include <string>
 
-POSDecoder::POSDecoder(std::function<void(const double &latitude, const double &longitude, const cluon::data::TimeStamp &sampleTime)> delegateLatitudeLongitude,
+POSDecoder::POSDecoder(const bool useGPSTime,
+                       std::function<void(const double &latitude, const double &longitude, const cluon::data::TimeStamp &sampleTime)> delegateLatitudeLongitude,
                        std::function<void(const float &heading, const cluon::data::TimeStamp &sampleTime)> delegateHeading,
                        std::function<void(opendlv::device::gps::pos::Grp1Data d, const cluon::data::TimeStamp &sampleTime)> delegateGrp1Data,
                        std::function<void(opendlv::device::gps::pos::Grp2Data d, const cluon::data::TimeStamp &sampleTime)> delegateGrp2Data,
@@ -35,7 +36,8 @@ POSDecoder::POSDecoder(std::function<void(const double &latitude, const double &
                        std::function<void(opendlv::device::gps::pos::Grp10002Data d, const cluon::data::TimeStamp &sampleTime)> d10002,
                        std::function<void(opendlv::device::gps::pos::Grp10003Data d, const cluon::data::TimeStamp &sampleTime)> d10003,
                        std::function<void(opendlv::device::gps::pos::Grp10009Data d, const cluon::data::TimeStamp &sampleTime)> d10009) noexcept
-    : m_delegateLatitudeLongitude(std::move(delegateLatitudeLongitude))
+    : m_useGPSTime(useGPSTime)
+    , m_delegateLatitudeLongitude(std::move(delegateLatitudeLongitude))
     , m_delegateHeading(std::move(delegateHeading))
     , m_delegateGrp1Data(std::move(delegateGrp1Data))
     , m_delegateGrp2Data(std::move(delegateGrp2Data))
@@ -165,7 +167,7 @@ size_t POSDecoder::parseBuffer(uint8_t *buffer, const size_t size, std::chrono::
                     opendlv::device::gps::pos::Grp1Data g1Data{getGRP1(b)};
 
                     // Use timestamp from GPS if available.
-                    if (1 == g1Data.timeDistance().time1Type()) {
+                    if (m_useGPSTime && (1 == g1Data.timeDistance().time1Type())) {
                         sampleTimeStamp = extractTimeDistance(g1Data.timeDistance().time1());
                     }
 
@@ -184,7 +186,7 @@ size_t POSDecoder::parseBuffer(uint8_t *buffer, const size_t size, std::chrono::
                     opendlv::device::gps::pos::Grp2Data g2Data{getGRP2(b)};
 
                     // Use timestamp from GPS if available.
-                    if (1 == g2Data.timeDistance().time1Type()) {
+                    if (m_useGPSTime && (1 == g2Data.timeDistance().time1Type())) {
                         sampleTimeStamp = extractTimeDistance(g2Data.timeDistance().time1());
                     }
 
@@ -197,7 +199,7 @@ size_t POSDecoder::parseBuffer(uint8_t *buffer, const size_t size, std::chrono::
                     opendlv::device::gps::pos::Grp3Data g3Data{getGRP3(b)};
 
                     // Use timestamp from GPS if available.
-                    if (1 == g3Data.timeDistance().time1Type()) {
+                    if (m_useGPSTime && (1 == g3Data.timeDistance().time1Type())) {
                         sampleTimeStamp = extractTimeDistance(g3Data.timeDistance().time1());
                     }
 
@@ -210,7 +212,7 @@ size_t POSDecoder::parseBuffer(uint8_t *buffer, const size_t size, std::chrono::
                     opendlv::device::gps::pos::Grp4Data g4Data{getGRP4(b)};
 
                     // Use timestamp from GPS if available.
-                    if (1 == g4Data.timeDistance().time1Type()) {
+                    if (m_useGPSTime && (1 == g4Data.timeDistance().time1Type())) {
                         sampleTimeStamp = extractTimeDistance(g4Data.timeDistance().time1());
                     }
 
@@ -223,7 +225,7 @@ size_t POSDecoder::parseBuffer(uint8_t *buffer, const size_t size, std::chrono::
                     opendlv::device::gps::pos::Grp10001Data g10001Data{getGRP10001(b, messageSize)};
 
                     // Use timestamp from GPS if available.
-                    if (1 == g10001Data.timeDistance().time1Type()) {
+                    if (m_useGPSTime && (1 == g10001Data.timeDistance().time1Type())) {
                         sampleTimeStamp = extractTimeDistance(g10001Data.timeDistance().time1());
                     }
 
@@ -236,7 +238,7 @@ size_t POSDecoder::parseBuffer(uint8_t *buffer, const size_t size, std::chrono::
                     opendlv::device::gps::pos::Grp10002Data g10002Data{getGRP10002(b, messageSize)};
 
                     // Use timestamp from GPS if available.
-                    if (1 == g10002Data.timeDistance().time1Type()) {
+                    if (m_useGPSTime && (1 == g10002Data.timeDistance().time1Type())) {
                         sampleTimeStamp = extractTimeDistance(g10002Data.timeDistance().time1());
                     }
 
@@ -249,7 +251,7 @@ size_t POSDecoder::parseBuffer(uint8_t *buffer, const size_t size, std::chrono::
                     opendlv::device::gps::pos::Grp10003Data g10003Data{getGRP10003(b)};
 
                     // Use timestamp from GPS if available.
-                    if (1 == g10003Data.timeDistance().time1Type()) {
+                    if (m_useGPSTime && (1 == g10003Data.timeDistance().time1Type())) {
                         sampleTimeStamp = extractTimeDistance(g10003Data.timeDistance().time1());
                     }
 
@@ -262,7 +264,7 @@ size_t POSDecoder::parseBuffer(uint8_t *buffer, const size_t size, std::chrono::
                     opendlv::device::gps::pos::Grp10009Data g10009Data{getGRP10009(b, messageSize)};
 
                     // Use timestamp from GPS if available.
-                    if (1 == g10009Data.timeDistance().time1Type()) {
+                    if (m_useGPSTime && (1 == g10009Data.timeDistance().time1Type())) {
                         sampleTimeStamp = extractTimeDistance(g10009Data.timeDistance().time1());
                     }
 

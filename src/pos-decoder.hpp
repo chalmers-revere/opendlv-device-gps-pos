@@ -54,7 +54,8 @@ class POSDecoder {
     POSDecoder &operator=(POSDecoder &&) = delete;
 
    public:
-    POSDecoder(std::function<void(const double &latitude, const double &longitude, const cluon::data::TimeStamp &sampleTime)> delegateLatitudeLongitude,
+    POSDecoder(const bool useGPSTime,
+               std::function<void(const double &latitude, const double &longitude, const cluon::data::TimeStamp &sampleTime)> delegateLatitudeLongitude,
                std::function<void(const float &heading, const cluon::data::TimeStamp &sampleTime)> delegateHeading,
                std::function<void(opendlv::device::gps::pos::Grp1Data d, const cluon::data::TimeStamp &sampleTime)> d1,
                std::function<void(opendlv::device::gps::pos::Grp2Data d, const cluon::data::TimeStamp &sampleTime)> d2,
@@ -71,6 +72,9 @@ class POSDecoder {
 
    private:
     size_t parseBuffer(uint8_t *buffer, const size_t size, std::chrono::system_clock::time_point &&tp);
+
+   private:
+    bool m_useGPSTime{false};
 
    private:
     std::function<void(const double &latitude, const double &longitude, const cluon::data::TimeStamp &sampleTime)> m_delegateLatitudeLongitude{};

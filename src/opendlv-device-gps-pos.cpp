@@ -31,11 +31,12 @@ int32_t main(int32_t argc, char **argv) {
     auto commandlineArguments = cluon::getCommandlineArguments(argc, argv);
     if ( (0 == commandlineArguments.count("pos_ip")) || (0 == commandlineArguments.count("pos_port")) || (0 == commandlineArguments.count("cid")) ) {
         std::cerr << argv[0] << " decodes latitude/longitude/heading from an Applanix POS GPS/INSS unit in POS format and publishes it to a running OpenDaVINCI session using the OpenDLV Standard Message Set." << std::endl;
-        std::cerr << "Usage:   " << argv[0] << " --pos_ip=<IPv4-address> --pos_port=<port> --cid=<OpenDaVINCI session> [--id=<Identifier in case of multiple OxTS units>] [--verbose]" << std::endl;
+        std::cerr << "Usage:   " << argv[0] << " --pos_ip=<IPv4-address> --pos_port=<port> --cid=<OpenDaVINCI session> [--id=<Identifier in case of multiple OxTS units>] [--verbose] [--usegpstime]" << std::endl;
         std::cerr << "Example: " << argv[0] << " --pos_ip=192.168.1.77 --pos_port=5602 --cid=111" << std::endl;
         retCode = 1;
     } else {
         const uint32_t ID{(commandlineArguments["id"].size() != 0) ? static_cast<uint32_t>(std::stoi(commandlineArguments["id"])) : 0};
+        const bool USE_GPS_TIME{commandlineArguments.count("usegpstime") != 0};
         const bool VERBOSE{commandlineArguments.count("verbose") != 0};
 
         // Interface to a running OpenDaVINCI session (ignoring any incoming Envelopes).
@@ -43,7 +44,7 @@ int32_t main(int32_t argc, char **argv) {
             [](auto){}
         };
 
-        POSDecoder posDecoder{
+        POSDecoder posDecoder{USE_GPS_TIME,
             [&od4Session = od4, senderStamp = ID, VERBOSE](const double &latitude, const double &longitude, const cluon::data::TimeStamp &sampleTime) {
                 opendlv::proxy::GeodeticWgs84Reading m;
                 m.latitude(latitude).longitude(longitude);
